@@ -151,15 +151,33 @@ $gadget_icons = array(
             
             <!-- Loss Cover Option (Policy Level) -->
             <div class="mgu-api-form-group">
-                <label>
-                    <input type="checkbox" id="policy-loss-cover" name="policy-loss-cover" value="yes">
-                    Add Loss Cover Protection (applies to all gadgets)
-                </label>
-                <div id="policy-loss-cover-info" style="margin-top: 10px;">
-                    <!-- Loss cover pricing -->
+                <div class="mgu-loss-row mgu-gadget-grid">
+                    <div class="mgu-api-radio-option mgu-option-box mgu-gadget-option mgu-loss-toggle" role="checkbox" aria-checked="false">
+                        <input type="checkbox" id="policy-loss-cover" name="policy-loss-cover" value="yes">
+                        <label for="policy-loss-cover">
+                            <span class="mgu-loss-line">Loss</span>
+                            <span class="mgu-loss-text">Excluded</span>
+                        </label>
+                        <span class="mgu-tick" aria-hidden="true"></span>
+                    </div>
+                    <div class="mgu-api-help-text" id="policy-loss-cover-info">Loss cover is not available for Laptops.</div>
                 </div>
             </div>
             
+            <!-- Policy-wide Billing Period Toggle -->
+            <div class="mgu-api-form-group">
+                <label>Billing Period</label>
+                <div id="policy-period-toggle" class="mgu-gadget-grid" role="radiogroup" aria-label="Select Billing Period">
+                    <button type="button" class="mgu-gadget-option mgu-option-box" role="radio" aria-checked="false" data-period="Month">
+                        <span class="mgu-option-amount">Monthly</span>
+                    </button>
+                    <button type="button" class="mgu-gadget-option mgu-option-box" role="radio" aria-checked="false" data-period="Annual">
+                        <span class="mgu-option-amount">Annual</span>
+                    </button>
+                </div>
+                <div id="policy-period-help" class="mgu-api-help-text" style="margin-top:8px;">Premiums will be shown when you choose payment period.</div>
+            </div>
+
             <!-- Total Premium Display -->
             <div id="total-premium-display" class="mgu-api-total-premium">
                 <!-- Total premium -->

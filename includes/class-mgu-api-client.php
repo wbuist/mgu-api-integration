@@ -290,6 +290,17 @@ class MGU_API_Client {
     }
 
     /**
+     * Update an existing customer.
+     *
+     * @since    1.0.0
+     * @param    array     $customer_data    The customer data (TGadgetCustomer structure).
+     * @return   array|WP_Error             The API response or WP_Error on failure.
+     */
+    public function update_customer($customer_data) {
+        return $this->make_request('/v2/customer', 'PUT', $customer_data);
+    }
+
+    /**
      * Find a customer by external ID.
      *
      * @since    1.0.0

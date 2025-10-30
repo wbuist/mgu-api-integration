@@ -127,6 +127,9 @@ class MGU_API {
         
         add_action('wp_ajax_mgu_api_create_customer', array($this, 'ajax_create_customer'));
         add_action('wp_ajax_nopriv_mgu_api_create_customer', array($this, 'ajax_create_customer'));
+        
+        add_action('wp_ajax_mgu_api_update_customer', array($this, 'ajax_update_customer'));
+        add_action('wp_ajax_nopriv_mgu_api_update_customer', array($this, 'ajax_update_customer'));
 
         // Add new handlers for basket and policy operations
         add_action('wp_ajax_mgu_api_open_basket', array($this, 'ajax_open_basket'));
@@ -149,6 +152,9 @@ class MGU_API {
         
         add_action('wp_ajax_mgu_api_get_basket', array($this, 'ajax_get_basket'));
         add_action('wp_ajax_nopriv_mgu_api_get_basket', array($this, 'ajax_get_basket'));
+        
+        add_action('wp_ajax_mgu_api_cancel_basket', array($this, 'ajax_cancel_basket'));
+        add_action('wp_ajax_nopriv_mgu_api_cancel_basket', array($this, 'ajax_cancel_basket'));
     }
 
     /**
@@ -356,6 +362,89 @@ class MGU_API {
         
         error_log('Customer creation response: ' . print_r($response, true));
         error_log('=== End Customer Creation Debug ===');
+        wp_send_json_success($response);
+    }
+    
+    /**
+     * AJAX handler for updating a customer
+     */
+    public function ajax_update_customer() {
+        error_log('=== Customer Update Debug ===');
+        error_log('AJAX request received for customer update');
+        error_log('POST data: ' . print_r($_POST, true));
+        
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
+            error_log('Nonce verification failed for customer update');
+            wp_send_json_error('Invalid security token');
+            return;
+        }
+        
+        $customer_data = isset($_POST['customer_data']) ? $_POST['customer_data'] : array();
+        
+        if (empty($customer_data)) {
+            error_log('No customer data provided');
+            wp_send_json_error('Customer data is required');
+            return;
+        }
+
+        // Convert marketingOk to boolean
+        if (isset($customer_data['marketingOk'])) {
+            $customer_data['marketingOk'] = filter_var($customer_data['marketingOk'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        // Ensure id is an integer (required by API)
+        if (isset($customer_data['id'])) {
+            $customer_data['id'] = intval($customer_data['id']);
+        }
+
+        // Validate required fields according to TGadgetCustomer specification
+        $required_fields = array('givenName', 'lastName', 'email', 'mobileNumber', 'address1', 'postCode');
+        foreach ($required_fields as $field) {
+            if (empty($customer_data[$field])) {
+                error_log("Missing required field: {$field}");
+                wp_send_json_error("Missing required field: {$field}");
+                return;
+            }
+        }
+
+        // Validate field lengths according to Swagger specification
+        $field_lengths = array(
+            'title' => 4,
+            'givenName' => 25,
+            'lastName' => 30,
+            'companyName' => 250,
+            'address1' => 25,
+            'address2' => 25,
+            'address3' => 25,
+            'address4' => 25,
+            'postCode' => 9,
+            'email' => 75,
+            'mobileNumber' => 25,
+            'homePhone' => 25,
+            'externalId' => 75
+        );
+
+        foreach ($field_lengths as $field => $max_length) {
+            if (isset($customer_data[$field]) && strlen($customer_data[$field]) > $max_length) {
+                error_log("Field {$field} exceeds maximum length of {$max_length}");
+                wp_send_json_error("Field {$field} exceeds maximum length of {$max_length}");
+                return;
+            }
+        }
+        
+        error_log('Customer data validated, calling API client');
+        $api_client = new MGU_API_Client();
+        $response = $api_client->update_customer($customer_data);
+        
+        if (is_wp_error($response)) {
+            error_log('API Error: ' . $response->get_error_message());
+            wp_send_json_error($response->get_error_message());
+            return;
+        }
+        
+        error_log('Customer update response: ' . print_r($response, true));
+        error_log('=== End Customer Update Debug ===');
         wp_send_json_success($response);
     }
 
@@ -1182,6 +1271,44 @@ class MGU_API {
         
         error_log('Basket data retrieved successfully: ' . print_r($response, true));
         error_log('=== End Get Basket Debug ===');
+        wp_send_json_success($response);
+    }
+    
+    /**
+     * AJAX handler for canceling basket
+     */
+    public function ajax_cancel_basket() {
+        error_log('=== Cancel Basket Debug ===');
+        error_log('AJAX request received for canceling basket');
+        error_log('POST data: ' . print_r($_POST, true));
+        
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
+            error_log('Nonce verification failed for canceling basket');
+            wp_send_json_error('Invalid security token');
+            return;
+        }
+        
+        $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
+        
+        if (!$basket_id) {
+            error_log('Missing basket ID for canceling basket');
+            wp_send_json_error('Missing basket ID');
+            return;
+        }
+        
+        error_log('Canceling basket: ' . $basket_id);
+        $api_client = new MGU_API_Client();
+        $response = $api_client->cancel_basket($basket_id);
+        
+        if (is_wp_error($response)) {
+            error_log('Error canceling basket: ' . $response->get_error_message());
+            wp_send_json_error($response->get_error_message());
+            return;
+        }
+        
+        error_log('Basket canceled successfully: ' . print_r($response, true));
+        error_log('=== End Cancel Basket Debug ===');
         wp_send_json_success($response);
     }
 } 

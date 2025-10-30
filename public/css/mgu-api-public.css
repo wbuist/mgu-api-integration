@@ -655,6 +655,47 @@ input[type="checkbox"]#policy-loss-cover {
 .mgu-marketing-toggle label { cursor: pointer; }
 .mgu-marketing-toggle.selected { border-color: #0073aa; background: #e7f3ff; }
 
+/* Loss cover toggle styled like option boxes */
+.mgu-loss-toggle input[type="checkbox"] { position: absolute; opacity: 0; }
+.mgu-loss-toggle label { cursor: pointer; }
+.mgu-loss-toggle.selected { border-color: #0073aa; background: #e7f3ff; }
+
+/* Make loss toggle a square like other options */
+.mgu-loss-row { gap: 12px; }
+.mgu-loss-toggle {
+    min-height: 88px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.mgu-loss-toggle label { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.mgu-loss-line { font-weight: 700; }
+.mgu-loss-text { font-size: 0.95rem; }
+.mgu-loss-toggle .mgu-tick {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #0073aa;
+    border-radius: 4px;
+    background: #ffffff;
+}
+.mgu-loss-toggle.selected .mgu-tick {
+    background: #0073aa;
+    color: #ffffff;
+}
+.mgu-loss-toggle.selected .mgu-tick::after {
+    content: '\2713';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    font-size: 14px;
+}
+
 /* Form labels and help text */
 .mgu-api-form-group label {
     font-weight: 600;
