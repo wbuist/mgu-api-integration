@@ -1,0 +1,39 @@
+name: Build and Release ZIP
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare directories
+        run: |
+          mkdir -p dist
+          PLUGIN_SLUG=mgu-api-integration
+          rsync -av --exclude '.git' \
+                    --exclude '.github' \
+                    --exclude 'documentation' \
+                    --exclude 'tests' \
+                    --exclude 'API_OVERVIEW.md' \
+                    --exclude 'STYLING_GUIDE.md' \
+                    ./ ./dist/${PLUGIN_SLUG}/
+
+      - name: Create zip
+        run: |
+          cd dist
+          zip -r mgu-api-integration.zip mgu-api-integration
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/mgu-api-integration.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

@@ -1,0 +1,10 @@
+# Exclude development-only files from source exports (Download ZIP / git archive)
+.github/ export-ignore
+documentation/ export-ignore
+API_OVERVIEW.md export-ignore
+STYLING_GUIDE.md export-ignore
+tests/ export-ignore
+*.psd export-ignore
+*.ai export-ignore
+
+

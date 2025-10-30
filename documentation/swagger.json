@@ -1,0 +1,1223 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "## Overview\r\n\r\nThis API enables the setup of **My Gadget Umbrella** policies for your customers.\r\n\r\nIt provides methods to:\r\n\r\n* Retrieve premiums\r\n* Create insurance policies\r\n\r\n---\r\n\r\n## Authorisation\r\n\r\nAccess is authenticated using your **Client ID** and **Client Secret**.\r\n\r\nRefer to the following documentation for authentication:\r\n\r\n* [Auth Swagger](https://sandbox.api.mygadgetumbrella.com/sbauth/swaggerui)\r\n* [Auth Redoc](https://sandbox.api.mygadgetumbrella.com/sbauth/)\r\n\r\nTo use the testing features in this Swagger:\r\n\r\n1. Visit [Auth Swagger](https://sandbox.api.mygadgetumbrella.com/sbauth/swaggerui)\r\n2. Use the `oauth/token` method — enter your:\r\n- sandbox Client ID\r\n- Client Secret\r\n- Set the Grant_Type to 'client_credentials`\r\n- click Execute\r\n3. Copy the returned `access_token`\r\n4. Reopen this Swagger\r\n5. Click the **Authorize** button\r\n6. In the **Value** box, type:\r\n\r\n   ```\r\n   bearer \u003Cpaste-your-access-token-here\u003E\r\n   ```\r\n\r\n   You **MUST** use the word bearer, leave a space and then paste your token\r\n\r\n7. Click **Authorize**\r\n\r\n---\r\n\r\n## Process\r\n\r\nA typical policy setup process involves the following steps:\r\n\r\n1. *Create/Find a customer:* use the `/customerapi` endpoint to create a new customer, or retrieve an existing customer\r\n\r\n    - `newCustomer()`\r\n\r\n    - or use `findCustomer endpoints`\r\n\r\n2. *Open a basket* for the customer\r\n\r\n3. *Get a list of products/models:* Use the support methods to retrieve valid data:\r\n\r\n      - `getManufacturers`\r\n\r\n      - `getModels`\r\n\r\n3. *Insure gadgets to add them to the basket:* You can continue to use these until the basket is confirmed\r\n\r\n    - `insureGadget` (for a single gadget)\r\n\r\n    - `insureGadgets` (for mutiple in one go) [replaces the deprecated method `addGadgets`]\r\n\r\n4. *Finalise the basket:* call `confirmBasket` and if payment is required (return value of call to `confirmBasket` response.Outcome = PaymentRequired) call `payByDirectDebit`\r\n\r\n---\r\n\r\n",
+    "version": "1.0",
+    "title": "My Gadget Umbrella API"
+  },
+  "host": "sandbox.api.mygadgetumbrella.com",
+  "basePath": "/sbapi",
+  "tags": [
+    {
+      "name": "customer"
+    },
+    {
+      "name": "v2"
+    }
+  ],
+  "paths": {
+    "/v2/addLossCover": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.addLossCover",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetBasket"
+            }
+          }
+        }
+      }
+    },
+    "/v2/cancelBasket": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.cancelBasket",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "enum": [
+                    "PaymentRequired",
+                    "Confirmed",
+                    "Error",
+                    "Cancelled"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/confirm": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Confirm an order",
+        "description": "\u003Cpara\u003E\r\n             This call confirms a basket and marks it as awaiting payment. If the response is \"Confirmed\", then no further action is required.\r\n           \u003C/para\u003E\u003Cpara\u003E\r\n             If the response is \"PaymentRequired\" then a call is needed tp either a PayByDirectDebit (with the account info) or to PayByCard.\r\n           \u003C/para\u003E",
+        "operationId": "IAPIService.confirm",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TPaymentResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v2/customer": {
+      "post": {
+        "tags": [
+          "customer"
+        ],
+        "operationId": "ICustomerService.newCustomer",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "customer"
+        ],
+        "operationId": "ICustomerService.UpdateCustomer",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+            }
+          }
+        }
+      }
+    },
+    "/v2/customer/find/emai/{emailAddress}": {
+      "get": {
+        "tags": [
+          "customer"
+        ],
+        "operationId": "ICustomerService.findCustomerByEmail",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "emailAddress",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/customer/find/externalid/{externalId}": {
+      "get": {
+        "tags": [
+          "customer"
+        ],
+        "operationId": "ICustomerService.findCustomerByExternalId",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "externalId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+            }
+          }
+        }
+      }
+    },
+    "/v2/customer/find/mobile/{mobileNumber}": {
+      "get": {
+        "tags": [
+          "customer"
+        ],
+        "operationId": "ICustomerService.findCustomerByMobile",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mobileNumber",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/customer/{customerId}": {
+      "get": {
+        "tags": [
+          "customer"
+        ],
+        "operationId": "ICustomerService.findCustomer",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customerId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetCustomer"
+            }
+          }
+        }
+      }
+    },
+    "/v2/echoString": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "A simple test method for a Post call",
+        "operationId": "IAPIService.echoString",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "Value"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/getBasket": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Retrieve an exising basket",
+        "description": "This returns an existing basket",
+        "operationId": "IAPIService.getBasket",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "description": "the My Gadget Umbrella basket id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetBasket"
+            }
+          }
+        }
+      }
+    },
+    "/v2/getQuote": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.getQuote",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "productId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "memoryInstalled",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "purchasePrice",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetPremium"
+            }
+          }
+        }
+      }
+    },
+    "/v2/insureGadget": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.insureGadget",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "productId",
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "dateOfPurchase",
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "in": "query",
+            "name": "serialNumber",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "installedMemory",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "purchasePrice",
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetBasket"
+            }
+          }
+        }
+      }
+    },
+    "/v2/insureGadgets": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.insureGadgets",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetBasket"
+            }
+          }
+        }
+      }
+    },
+    "/v2/manufacturers": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get a list of available maufacturers",
+        "operationId": "IAPIService.manufacturers",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/MGU.API.Response.Types.TIdAndName"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/manufacturersByGadget": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Returns a list of manufacturers for a specific gadget type",
+        "operationId": "IAPIService.manufacturersByGadget",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "GadgetType",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "None",
+              "MobilePhone",
+              "Laptop",
+              "Tablet",
+              "VRHeadset",
+              "Watch",
+              "GamesConsole"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/MGU.API.Response.Types.TIdAndName"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/models": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Get a list of gadgets by make and gadget type",
+        "operationId": "IAPIService.models",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ManufacturerId",
+            "description": "The id for the manufacturer (Apple, Asus etc) use the manufacturers endppoint to obtian this.",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "GadgetType",
+            "description": "The gadget type you want the available models for",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "None",
+              "MobilePhone",
+              "Laptop",
+              "Tablet",
+              "VRHeadset",
+              "Watch",
+              "GamesConsole"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/MGU.API.Response.Types.TGadgetProduct"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/openBasket": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Create a basket",
+        "description": "Call this method to create a basket. You need a basket to add any gadget policies.",
+        "operationId": "IAPIService.openBasket",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "customerId",
+            "description": "the customer id retrieved from newCustomer",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "premiumPeriod",
+            "description": "Month, Annual",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "Month",
+              "Annual"
+            ]
+          },
+          {
+            "in": "query",
+            "name": "includeLossCover",
+            "description": "Yes,No",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/payByDirectDebit": {
+      "post": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "Sends the Customers bank account details",
+        "operationId": "IAPIService.payByDirectDebit",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "basketId": {
+                  "type": "integer"
+                },
+                "directDebit": {
+                  "$ref": "#/definitions/MGU.API.Response.Types.TDirectDebit"
+                }
+              },
+              "required": [
+                "basketId",
+                "directDebit"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TPaymentResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v2/removeLossCover": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.removeLossCover",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetBasket"
+            }
+          }
+        }
+      }
+    },
+    "/v2/removePolicy": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "operationId": "IAPIService.removePolicy",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "basketId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "policyId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/MGU.API.Response.Types.TGadgetBasket"
+            }
+          }
+        }
+      }
+    },
+    "/v2/sum": {
+      "get": {
+        "tags": [
+          "v2"
+        ],
+        "summary": "A simple test method for a Get call",
+        "operationId": "IAPIService.sum",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "A",
+            "required": true,
+            "type": "number"
+          },
+          {
+            "in": "query",
+            "name": "B",
+            "required": true,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "jwt": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "MGU.API.Response.Types.TGadgetCustomer": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 4
+        },
+        "givenName": {
+          "type": "string",
+          "description": "First name, Christian name, Personal Name \u003Cbr/\u003E\u003Cb\u003ERequired\u003C/b\u003E",
+          "maxLength": 25
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Family name, Surname \u003Cbr/\u003E\u003Cb\u003ERequired\u003C/b\u003E",
+          "maxLength": 30
+        },
+        "companyName": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "address1": {
+          "type": "string",
+          "description": "\u003Cpara\u003E\r\n           First line of address  \u003Cbr/\u003E\r\n\t\u003Cb\u003ERequired\u003C/b\u003E\r\n\u003C/para\u003E",
+          "maxLength": 25
+        },
+        "address2": {
+          "type": "string",
+          "maxLength": 25
+        },
+        "address3": {
+          "type": "string",
+          "maxLength": 25
+        },
+        "address4": {
+          "type": "string",
+          "maxLength": 25
+        },
+        "postCode": {
+          "type": "string",
+          "description": "\u003Cpara\u003E\r\n           PostCode, e.g. HA1 5HN  \u003Cbr/\u003E\r\n\t\u003Cb\u003ERequired\u003C/b\u003E\r\n\u003C/para\u003E",
+          "maxLength": 9
+        },
+        "email": {
+          "type": "string",
+          "description": "\u003Cb\u003ERequired\u003C/b\u003E",
+          "maxLength": 75
+        },
+        "mobileNumber": {
+          "type": "string",
+          "description": "\u003Cb\u003ERequired\u003C/b\u003E",
+          "maxLength": 25
+        },
+        "homePhone": {
+          "type": "string",
+          "maxLength": 25
+        },
+        "marketingOk": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "externalId": {
+          "type": "string",
+          "description": "The customer's identifier from the source system",
+          "maxLength": 75
+        }
+      }
+    },
+    "MGU.API.Response.Types.TIdAndName": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "MGU.API.Response.Types.TGadgetProduct": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "manufacturerId": {
+          "type": "integer"
+        },
+        "make": {
+          "type": "string",
+          "description": "The manufacturers name"
+        },
+        "gadgetType": {
+          "type": "string",
+          "enum": [
+            "None",
+            "MobilePhone",
+            "Laptop",
+            "Tablet",
+            "VRHeadset",
+            "Watch",
+            "GamesConsole"
+          ]
+        },
+        "productName": {
+          "type": "string",
+          "description": "Name of the product"
+        },
+        "optionType": {
+          "type": "string",
+          "description": "Type of data needed for premium calculation",
+          "enum": [
+            "None",
+            "Value",
+            "Memory"
+          ]
+        },
+        "memoryOptions": {
+          "$ref": "#/definitions/System.JSON.TJSONArray",
+          "description": "For Memory options this will provide a list of the options available\r\nfor the gadget"
+        }
+      }
+    },
+    "System.JSON.TJSONArray": {
+
+    },
+    "MGU.API.Response.Types.TGadgetBasket": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "customerId": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "New",
+            "Saved",
+            "Completed",
+            "Deleted",
+            "Confirmed"
+          ]
+        },
+        "PremiumPeriod": {
+          "type": "string",
+          "enum": [
+            "Month",
+            "Annual"
+          ]
+        },
+        "grossPremium": {
+          "type": "number"
+        },
+        "netPremium": {
+          "type": "number"
+        },
+        "lossCover": {
+          "type": "boolean"
+        },
+        "NumberOfPolicies": {
+          "type": "integer"
+        },
+        "DiscountTotal": {
+          "type": "number"
+        },
+        "DateCompleted": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "StartDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "AcceptedTerms": {
+          "type": "boolean"
+        },
+        "PaymentProvider": {
+          "type": "string",
+          "enum": [
+            "None",
+            "PayPal",
+            "Revolut",
+            "Stripe",
+            "DirectDebit",
+            "BACS",
+            "Cheque",
+            "ApiInvoice"
+          ]
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MGU.API.Response.Types.TGadgetPolicy"
+          }
+        }
+      }
+    },
+    "MGU.API.Response.Types.TGadgetPolicy": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "premiumId": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Deleted",
+            "NotActive",
+            "New",
+            "Saved",
+            "Active",
+            "Cancelled",
+            "Completed"
+          ]
+        },
+        "gadgetType": {
+          "type": "string",
+          "enum": [
+            "None",
+            "MobilePhone",
+            "Laptop",
+            "Tablet",
+            "VRHeadset",
+            "Watch",
+            "GamesConsole"
+          ]
+        },
+        "productId": {
+          "type": "integer"
+        },
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "dateOfPurchase": {
+          "type": "string",
+          "format": "date"
+        },
+        "installedMemory": {
+          "type": "string"
+        },
+        "serialNumber": {
+          "type": "string"
+        },
+        "purchasePrice": {
+          "type": "number"
+        },
+        "premiumPeriod": {
+          "type": "string",
+          "enum": [
+            "MonthlyCover",
+            "AnnualCover"
+          ]
+        },
+        "premium": {
+          "type": "number"
+        },
+        "discountPercent": {
+          "type": "number"
+        },
+        "grossPremium": {
+          "type": "number"
+        },
+        "netPremium": {
+          "type": "number"
+        },
+        "damageExcess": {
+          "type": "number"
+        },
+        "theftExcess": {
+          "type": "number"
+        },
+        "lossCover": {
+          "type": "boolean"
+        },
+        "lossPremium": {
+          "type": "number"
+        }
+      }
+    },
+    "MGU.API.Response.Types.TGadgetPremium": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "gadgetType": {
+          "type": "string",
+          "enum": [
+            "None",
+            "MobilePhone",
+            "Laptop",
+            "Tablet",
+            "VRHeadset",
+            "Watch",
+            "GamesConsole"
+          ]
+        },
+        "manufacturerId": {
+          "type": "integer"
+        },
+        "productId": {
+          "type": "integer"
+        },
+        "make": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "standardMemory": {
+          "type": "string"
+        },
+        "memorySize": {
+          "type": "number"
+        },
+        "monthlyPremium": {
+          "type": "number"
+        },
+        "annualPremium": {
+          "type": "number"
+        },
+        "damageExcess": {
+          "type": "number"
+        },
+        "theftExcess": {
+          "type": "number"
+        },
+        "lossCoverAvailable": {
+          "type": "boolean"
+        },
+        "lossCoverMonthlyPremium": {
+          "type": "number"
+        },
+        "lossCoverAnnualPremium": {
+          "type": "number"
+        }
+      }
+    },
+    "MGU.API.Response.Types.TPaymentResponse": {
+      "type": "object",
+      "properties": {
+        "Outcome": {
+          "type": "string",
+          "enum": [
+            "PaymentRequired",
+            "Confirmed",
+            "Error",
+            "Cancelled"
+          ]
+        },
+        "OutcomeText": {
+          "type": "string",
+          "description": "If the Outcome is \"error\" then this field will contain the error text, otherwise it will be set to \"ok\""
+        },
+        "PaymentId": {
+          "type": "integer",
+          "description": "MGU Payment Transaction Id. If the payment is by Direct Debit or Card then this contains the MGU Payment Transaction Id, otherwise this will be 0"
+        }
+      }
+    },
+    "MGU.API.Response.Types.TDirectDebit": {
+      "type": "object",
+      "properties": {
+        "NameOnAccount": {
+          "type": "string"
+        },
+        "AccountNumber": {
+          "type": "string"
+        },
+        "SortCode": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "jwt": []
+    }
+  ]
+}
