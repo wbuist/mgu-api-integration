@@ -1,0 +1,12 @@
+.mgu-icon-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mgu-icon-field .mgu-icon-url {
+    max-width: 420px;
+}
+
+

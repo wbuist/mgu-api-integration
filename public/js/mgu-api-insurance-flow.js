@@ -32,7 +32,32 @@ jQuery(document).ready(function($) {
         $('#' + buttonId).removeClass('loading').prop('disabled', false);
     }
 
-    // Handle gadget type selection
+    // Icon grid -> hidden select sync (progressive enhancement)
+    $(document).on('click', '.mgu-gadget-option', function(e) {
+        e.preventDefault();
+        const value = $(this).data('value');
+        if (!value) return;
+
+        // Update aria state and selected class
+        $('.mgu-gadget-option').attr('aria-checked', 'false').removeClass('selected');
+        $(this).attr('aria-checked', 'true').addClass('selected').focus();
+
+        // Sync to hidden select and fire change for existing listeners
+        const $select = $('#gadget-type-select');
+        if ($select.length) {
+            $select.val(value).trigger('change');
+        }
+    });
+
+    // Keyboard support for icon grid (Enter/Space)
+    $(document).on('keydown', '.mgu-gadget-option', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            $(this).trigger('click');
+        }
+    });
+
+    // Handle gadget type selection (existing flow)
     $('#gadget-type-select').on('change', function() {
         const gadgetType = $(this).val();
         if (!gadgetType) return;
