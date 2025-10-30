@@ -903,20 +903,8 @@ jQuery(document).ready(function($) {
     function displayQuoteSummary() {
         console.log('DEBUG - Displaying quote summary for gadgets:', basketGadgets);
         
-        // Display gadget list
-        let gadgetListHtml = '<h4>Gadgets in your policy:</h4>';
-        basketGadgets.forEach((gadget, index) => {
-            gadgetListHtml += `
-                <div class="mgu-api-gadget-item" style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px;">
-                    <strong>${gadget.modelName}</strong><br>
-                    Memory: ${gadget.memoryInstalled || 'N/A'}<br>
-                    Purchase Price: £${gadget.purchasePrice.toFixed(2)}<br>
-                    Purchase Date: ${gadget.purchaseDate}<br>
-                    Premium Period: ${window.selectedPremiumPeriod ? window.selectedPremiumPeriod : '—'}
-                </div>
-            `;
-        });
-        $('#gadget-list').html(gadgetListHtml);
+        // Clear gadget list - it will be populated by displayBasketPremiums
+        $('#gadget-list').html('<h4>Gadgets in your policy:</h4>');
         
         // Always enable loss cover checkbox - consumers can toggle freely
         $('#policy-loss-cover').prop('disabled', false);
@@ -1104,10 +1092,17 @@ jQuery(document).ready(function($) {
                 const lossAnnual = (basketGadgets[index] && basketGadgets[index].lossAnnual != null)
                     ? Number(basketGadgets[index].lossAnnual)
                     : 0;
+                
+                // Get gadget details from basketGadgets array
+                const gadgetDetails = basketGadgets[index];
                 premiumHtml += `
-                    <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 3px; background: white;">
+                    <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 3px; background: white; position: relative;">
                         <h5 style="margin: 0 0 5px 0;">Gadget ${index + 1}: ${gadget.make} ${gadget.model}</h5>
-                        <p style="margin: 2px 0;">Premium: £${baseDisplay.toFixed(2)}`;
+                        <p style="margin: 2px 0;"><strong>Memory:</strong> ${gadgetDetails ? (gadgetDetails.memoryInstalled || 'N/A') : 'N/A'}</p>
+                        <p style="margin: 2px 0;"><strong>Purchase Price:</strong> £${gadgetDetails ? gadgetDetails.purchasePrice.toFixed(2) : '0.00'}</p>
+                        <p style="margin: 2px 0;"><strong>Purchase Date:</strong> ${gadgetDetails ? gadgetDetails.purchaseDate : 'N/A'}</p>
+                        <p style="margin: 2px 0;"><strong>Premium Period:</strong> ${window.selectedPremiumPeriod || '—'}</p>
+                        <p style="margin: 2px 0;"><strong>Premium:</strong> £${baseDisplay.toFixed(2)}`;
                 
                 if (gadget.discountPercent > 0) {
                     premiumHtml += ` <span style="color: #28a745; font-weight: bold;">(${gadget.discountPercent}% discount applied)</span>`;
@@ -1119,8 +1114,11 @@ jQuery(document).ready(function($) {
                 const lossCoverEnabled = $('#policy-loss-cover').is(':checked');
                 if (lossCoverEnabled && (lossMonthly > 0 || lossAnnual > 0)) {
                     const lossDisplay = window.selectedPremiumPeriod === 'Annual' ? lossAnnual : lossMonthly;
-                    premiumHtml += `<p style=\"margin: 2px 0; color: #666;\">Loss Cover: £${lossDisplay.toFixed(2)}</p>`;
+                    premiumHtml += `<p style="margin: 2px 0;"><strong>Loss Cover:</strong> £${lossDisplay.toFixed(2)}</p>`;
                 }
+                
+                // Add delete button with policy ID for removal
+                premiumHtml += `<button type="button" class="mgu-delete-gadget-btn" data-policy-id="${gadget.id}">Delete</button>`;
                 
                 premiumHtml += '</div>';
             });
@@ -1327,6 +1325,18 @@ jQuery(document).ready(function($) {
         $cb.prop('checked', !$cb.prop('checked')).trigger('change');
     });
     
+    // Handle delete gadget button clicks
+    $(document).on('click', '.mgu-delete-gadget-btn', function(e) {
+        e.preventDefault();
+        const policyId = parseInt($(this).data('policy-id'), 10);
+        if (!policyId) {
+            console.error('DEBUG - No policy ID found on delete button');
+            return;
+        }
+        console.log('DEBUG - Deleting policy:', policyId);
+        handleDeleteGadget(policyId);
+    });
+    
     // Function to handle Add Another Gadget
     function handleAddAnotherGadget() {
         console.log('DEBUG - Resetting Steps 1-4 for adding another gadget');
@@ -1512,6 +1522,58 @@ jQuery(document).ready(function($) {
         
         // Start adding gadgets one by one
         addNextGadget();
+    }
+    
+    // Function to handle delete gadget
+    function handleDeleteGadget(policyId) {
+        if (!currentBasketId) {
+            console.error('DEBUG - No basket ID available for deleting gadget');
+            showError('step-quote', 'No basket available');
+            return;
+        }
+        
+        console.log('DEBUG - Removing policy from basket:', policyId, 'basket:', currentBasketId);
+        
+        // Show loading state
+        showLoading('step-quote');
+        
+        $.ajax({
+            url: mgu_api.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'mgu_api_remove_policy',
+                basket_id: currentBasketId,
+                policy_id: policyId,
+                nonce: mgu_api.nonce
+            },
+            success: function(response) {
+                console.log('DEBUG - Policy removed response:', response);
+                hideLoading('step-quote');
+                if (response.success) {
+                    // Find and remove gadget from local array by matching with API response data
+                    if (response.data && response.data.policies) {
+                        const remainingPolicyIds = response.data.policies.map(p => p.id);
+                        // Remove gadgets that are no longer in the basket
+                        basketGadgets = basketGadgets.filter((gadget, index) => {
+                            if (lastBasketData && lastBasketData.policies && lastBasketData.policies[index]) {
+                                return remainingPolicyIds.includes(lastBasketData.policies[index].id);
+                            }
+                            return true;
+                        });
+                    }
+                    // Refresh basket data and display
+                    lastBasketData = response.data;
+                    displayBasketPremiums(response.data);
+                } else {
+                    showError('step-quote', 'Failed to remove gadget: ' + (response.data.message || 'Unknown error'));
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading('step-quote');
+                console.error('DEBUG - Error removing policy:', error);
+                showError('step-quote', 'Error removing gadget: ' + error);
+            }
+        });
     }
     
     // Function to handle Policy Loss Cover toggle

@@ -155,6 +155,9 @@ class MGU_API {
         
         add_action('wp_ajax_mgu_api_cancel_basket', array($this, 'ajax_cancel_basket'));
         add_action('wp_ajax_nopriv_mgu_api_cancel_basket', array($this, 'ajax_cancel_basket'));
+        
+        add_action('wp_ajax_mgu_api_remove_policy', array($this, 'ajax_remove_policy'));
+        add_action('wp_ajax_nopriv_mgu_api_remove_policy', array($this, 'ajax_remove_policy'));
     }
 
     /**
@@ -1309,6 +1312,45 @@ class MGU_API {
         
         error_log('Basket canceled successfully: ' . print_r($response, true));
         error_log('=== End Cancel Basket Debug ===');
+        wp_send_json_success($response);
+    }
+    
+    /**
+     * AJAX handler for removing policy from basket
+     */
+    public function ajax_remove_policy() {
+        error_log('=== Remove Policy Debug ===');
+        error_log('AJAX request received for removing policy');
+        error_log('POST data: ' . print_r($_POST, true));
+        
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
+            error_log('Nonce verification failed for removing policy');
+            wp_send_json_error('Invalid security token');
+            return;
+        }
+        
+        $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
+        $policy_id = isset($_POST['policy_id']) ? intval($_POST['policy_id']) : 0;
+        
+        if (!$basket_id || !$policy_id) {
+            error_log('Missing basket ID or policy ID for removing policy');
+            wp_send_json_error('Missing required fields');
+            return;
+        }
+        
+        error_log('Removing policy: ' . $policy_id . ' from basket: ' . $basket_id);
+        $api_client = new MGU_API_Client();
+        $response = $api_client->remove_policy($basket_id, $policy_id);
+        
+        if (is_wp_error($response)) {
+            error_log('Error removing policy: ' . $response->get_error_message());
+            wp_send_json_error($response->get_error_message());
+            return;
+        }
+        
+        error_log('Policy removed successfully: ' . print_r($response, true));
+        error_log('=== End Remove Policy Debug ===');
         wp_send_json_success($response);
     }
 } 
