@@ -87,6 +87,15 @@ class MGU_API {
 
         // Register settings
         $this->loader->add_action('admin_init', $this, 'register_settings');
+
+        // Gadget Icons settings page
+        if (class_exists('MGU_API_Settings') === false) {
+            require_once MGU_API_PLUGIN_DIR . 'includes/class-mgu-api-settings.php';
+        }
+        $settings = new MGU_API_Settings();
+        $this->loader->add_action('admin_menu', $settings, 'register_admin_menu');
+        $this->loader->add_action('admin_init', $settings, 'register_settings');
+        $this->loader->add_action('admin_enqueue_scripts', $settings, 'admin_enqueue');
     }
 
     /**

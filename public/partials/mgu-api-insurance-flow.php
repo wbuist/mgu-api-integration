@@ -18,6 +18,18 @@ if (!defined('WPINC')) {
 
 // Get the API client
 $api_client = new MGU_API_Client();
+
+// Resolve gadget icon URLs from options with defaults
+$icon_options = get_option('mgu_api_gadget_icons', array());
+$default_base = trailingslashit(MGU_API_PLUGIN_URL . 'public/img/gadgets');
+$gadget_icons = array(
+    'MobilePhone' => !empty($icon_options['MobilePhone']) ? $icon_options['MobilePhone'] : $default_base . 'mobile-phone.svg',
+    'Laptop' => !empty($icon_options['Laptop']) ? $icon_options['Laptop'] : $default_base . 'laptop.svg',
+    'Tablet' => !empty($icon_options['Tablet']) ? $icon_options['Tablet'] : $default_base . 'tablet.svg',
+    'VRHeadset' => !empty($icon_options['VRHeadset']) ? $icon_options['VRHeadset'] : $default_base . 'vr-headset.svg',
+    'Watch' => !empty($icon_options['Watch']) ? $icon_options['Watch'] : $default_base . 'watch.svg',
+    'GamesConsole' => !empty($icon_options['GamesConsole']) ? $icon_options['GamesConsole'] : $default_base . 'games-console.svg',
+);
 ?>
 
 <div class="mgu-api-insurance-flow">
@@ -32,27 +44,27 @@ $api_client = new MGU_API_Client();
                 <!-- Icon Grid (visible control) -->
                 <div class="mgu-gadget-grid" role="radiogroup" aria-label="Select Gadget Type">
                     <button type="button" class="mgu-gadget-option mgu-gadget--MobilePhone" role="radio" aria-checked="false" data-value="MobilePhone">
-                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-icon" aria-hidden="true" style="background-image:url('<?php echo esc_url($gadget_icons['MobilePhone']); ?>')"></span>
                         <span class="mgu-gadget-label">Mobile Phone</span>
                     </button>
                     <button type="button" class="mgu-gadget-option mgu-gadget--Laptop" role="radio" aria-checked="false" data-value="Laptop">
-                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-icon" aria-hidden="true" style="background-image:url('<?php echo esc_url($gadget_icons['Laptop']); ?>')"></span>
                         <span class="mgu-gadget-label">Laptop</span>
                     </button>
                     <button type="button" class="mgu-gadget-option mgu-gadget--Tablet" role="radio" aria-checked="false" data-value="Tablet">
-                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-icon" aria-hidden="true" style="background-image:url('<?php echo esc_url($gadget_icons['Tablet']); ?>')"></span>
                         <span class="mgu-gadget-label">Tablet</span>
                     </button>
                     <button type="button" class="mgu-gadget-option mgu-gadget--VRHeadset" role="radio" aria-checked="false" data-value="VRHeadset">
-                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-icon" aria-hidden="true" style="background-image:url('<?php echo esc_url($gadget_icons['VRHeadset']); ?>')"></span>
                         <span class="mgu-gadget-label">VR Headset</span>
                     </button>
                     <button type="button" class="mgu-gadget-option mgu-gadget--Watch" role="radio" aria-checked="false" data-value="Watch">
-                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-icon" aria-hidden="true" style="background-image:url('<?php echo esc_url($gadget_icons['Watch']); ?>')"></span>
                         <span class="mgu-gadget-label">Watch</span>
                     </button>
                     <button type="button" class="mgu-gadget-option mgu-gadget--GamesConsole" role="radio" aria-checked="false" data-value="GamesConsole">
-                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-icon" aria-hidden="true" style="background-image:url('<?php echo esc_url($gadget_icons['GamesConsole']); ?>')"></span>
                         <span class="mgu-gadget-label">Games Console</span>
                     </button>
                 </div>
