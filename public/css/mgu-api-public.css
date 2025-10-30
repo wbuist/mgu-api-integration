@@ -6,6 +6,14 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     font-size: 16px;
+    color-scheme: light;
+}
+
+/* Contain floated steps */
+.mgu-api-steps::after {
+    content: "";
+    display: block;
+    clear: both;
 }
 
 .mgu-api-step {
@@ -14,6 +22,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     position: relative;
+    box-sizing: border-box;
 }
 
 .mgu-api-step h3 {
@@ -43,6 +52,11 @@
     padding-right: 40px;
 }
 
+/* Ensure selects look light (not dark grey) */
+.mgu-api-select { color: #222; background-color: #ffffff !important; }
+.mgu-api-select:disabled { background-color: #f5f5f5 !important; color: #888; }
+.mgu-api-select { color-scheme: light; }
+
 .mgu-api-select option {
     padding: 12px;
     font-size: 16px;
@@ -66,6 +80,22 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Ensure equal heights for side-by-side inputs */
+.mgu-form-row .mgu-api-input {
+    height: 44px;
+}
+
+/* Normalize number input height by removing spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
 }
 
 .mgu-api-button {
@@ -384,6 +414,21 @@
     margin-bottom: 1.5em;
 }
 
+/* Two-column row for purchase date/price on desktop */
+.mgu-form-row {
+    display: block;
+}
+@media (min-width: 900px) {
+    .mgu-form-row {
+        display: flex;
+        gap: 20px;
+    }
+    .mgu-form-row .mgu-form-col {
+        flex: 0 0 45%;
+        max-width: 45%;
+    }
+}
+
 .mgu-api-form-group label {
     display: block;
     margin-bottom: 0.5em;
@@ -485,6 +530,163 @@
 .mgu-api-button.enabled:hover {
     background-color: #005a87 !important;
 } 
+
+/* Modern UI: Section cards and active highlighting */
+.mgu-api-step {
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.mgu-api-step.is-active {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0,115,170,0.12), 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.mgu-api-step h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Option boxes (dynamic choices) */
+.mgu-option-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 14px;
+    border: 2px solid #e6e6e6;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.mgu-option-box:hover {
+    border-color: #bcd8e8;
+    background: #f7fbfe;
+}
+
+.mgu-option-box input[type="radio"] {
+    transform: scale(1.1);
+}
+
+.mgu-option-box.selected,
+.mgu-option-box input[type="radio"]:checked + label,
+.mgu-option-box input[type="radio"]:checked {
+    border-color: #0073aa;
+    background: #e7f3ff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+/* Option box content */
+.mgu-option-amount { font-weight: 700; font-size: 1.05rem; color: #0f2e46; }
+.mgu-option-sub { font-size: 0.9rem; color: #444; }
+
+/* Grid layouts for dynamic option groups */
+#memory-radio-buttons,
+#premium-period-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+@media (min-width: 640px) {
+    #memory-radio-buttons,
+    #premium-period-buttons {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (min-width: 1024px) {
+    #memory-radio-buttons,
+    #premium-period-buttons {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Buttons: consistent appearance */
+.mgu-api-button {
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+}
+
+.mgu-api-button-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.mgu-api-button-secondary:hover {
+    background: #5a6268;
+}
+
+/* Summary and quote panels */
+.mgu-api-quote-details,
+#total-premium-display {
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+
+#total-premium-display h4,
+.mgu-api-quote-details h4 {
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+}
+
+#total-premium-display .final-price,
+.mgu-api-quote-details .final-price {
+    font-size: 1.25rem;
+    color: #0073aa;
+    font-weight: 700;
+}
+
+/* Checkbox/toggle: larger and brand accent, keep native for a11y */
+input[type="checkbox"]#policy-loss-cover {
+    accent-color: #0073aa;
+    transform: scale(1.15);
+}
+
+/* Marketing toggle styled like option boxes */
+.mgu-marketing-toggle input[type="checkbox"] { position: absolute; opacity: 0; }
+.mgu-marketing-toggle label { cursor: pointer; }
+.mgu-marketing-toggle.selected { border-color: #0073aa; background: #e7f3ff; }
+
+/* Form labels and help text */
+.mgu-api-form-group label {
+    font-weight: 600;
+}
+
+.mgu-api-help-text {
+    color: #5f6b76;
+}
+
+/* Responsive spacing */
+@media (max-width: 640px) {
+    .mgu-api-insurance-flow {
+        padding: 16px;
+    }
+    .mgu-api-button {
+        width: 100%;
+    }
+}
+
+/* Desktop: place Manufacturer and Model steps side by side */
+@media (min-width: 900px) {
+    #step-manufacturer,
+    #step-model {
+        display: block;
+        float: left;
+        width: 47%;
+        box-sizing: border-box;
+    }
+    #step-manufacturer { margin-right: 6%; }
+    #step-model { margin-right: 0; }
+    #step-device { clear: both; }
+}
 
 /* Promo box can be hidden by theme via CSS */
 .mgu-promo-box {}

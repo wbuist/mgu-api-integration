@@ -32,6 +32,11 @@ jQuery(document).ready(function($) {
         $('#' + buttonId).removeClass('loading').prop('disabled', false);
     }
 
+    function setActiveStep(stepId) {
+        $('.mgu-api-step').removeClass('is-active');
+        $('#' + stepId).addClass('is-active');
+    }
+
     // Icon grid -> hidden select sync (progressive enhancement)
     $(document).on('click', '.mgu-gadget-option', function(e) {
         e.preventDefault();
@@ -47,6 +52,7 @@ jQuery(document).ready(function($) {
         if ($select.length) {
             $select.val(value).trigger('change');
         }
+        setActiveStep('step-manufacturer');
     });
 
     // Keyboard support for icon grid (Enter/Space)
@@ -66,6 +72,7 @@ jQuery(document).ready(function($) {
 
         // Show manufacturer step
         $('#step-manufacturer').show();
+        setActiveStep('step-manufacturer');
         
         const requestData = {
             action: 'mgu_api_get_manufacturers',
@@ -159,6 +166,7 @@ jQuery(document).ready(function($) {
 
         // Show model step
         $('#step-model').show();
+        setActiveStep('step-model');
         
         console.log('Loading models with:', {
             manufacturer_id: manufacturerId,
@@ -244,6 +252,7 @@ jQuery(document).ready(function($) {
             
             // Show Step 4
             $('#step-device').show();
+            setActiveStep('step-device');
             
             // Populate memory options if available
             populateMemoryOptions();
@@ -427,6 +436,7 @@ jQuery(document).ready(function($) {
         // For V2 API, we have a single quote, no need to select from options
         console.log('Buy Policy clicked - moving to policy creation');
         $('#step-policy').show();
+        setActiveStep('step-policy');
     });
 
     // Handle policy form submission
@@ -595,9 +605,11 @@ jQuery(document).ready(function($) {
                         selectedModel.memoryOptions.forEach(function(memoryOption) {
                             const radioId = 'memory-' + memoryOption.replace(/[^a-zA-Z0-9]/g, '');
                             const radioHtml = `
-                                <div class="mgu-api-radio-option">
+                                <div class="mgu-api-radio-option mgu-option-box">
                                     <input type="radio" id="${radioId}" name="memory-option" value="${memoryOption}">
-                                    <label for="${radioId}">${memoryOption}</label>
+                                    <label for="${radioId}">
+                                        <span class="mgu-option-amount">${memoryOption}</span>
+                                    </label>
                                 </div>
                             `;
                             $('#memory-radio-buttons').append(radioHtml);
@@ -613,6 +625,17 @@ jQuery(document).ready(function($) {
                             
                             validateQuoteButton();
                         });
+
+                        // If only one memory option, auto-select it
+                        if (selectedModel.memoryOptions.length === 1) {
+                            const onlyVal = selectedModel.memoryOptions[0];
+                            const onlyId = 'memory-' + onlyVal.replace(/[^a-zA-Z0-9]/g, '');
+                            const $only = $('#' + onlyId).closest('.mgu-api-radio-option');
+                            $only.addClass('selected');
+                            $('#' + onlyId).prop('checked', true);
+                            populatePremiumPeriodOptions(selectedModel.id, onlyVal);
+                            validateQuoteButton();
+                        }
                     } else {
                         // Hide memory options if none available
                         $('#memory-options-container').hide();
@@ -668,16 +691,22 @@ jQuery(document).ready(function($) {
                     
                     // Add radio buttons for monthly and annual premiums
                     const monthlyHtml = `
-                        <div class="mgu-api-radio-option">
+                        <div class="mgu-api-radio-option mgu-option-box">
                             <input type="radio" id="premium-monthly" name="premium-period" value="Month">
-                            <label for="premium-monthly">Monthly - £${monthlyPremium.toFixed(2)}</label>
+                            <label for="premium-monthly">
+                                <span class="mgu-option-amount">£${monthlyPremium.toFixed(2)}</span>
+                                <span class="mgu-option-sub">Monthly</span>
+                            </label>
                         </div>
                     `;
                     
                     const annualHtml = `
-                        <div class="mgu-api-radio-option">
+                        <div class="mgu-api-radio-option mgu-option-box">
                             <input type="radio" id="premium-annual" name="premium-period" value="Annual">
-                            <label for="premium-annual">Annual - £${annualPremium.toFixed(2)}</label>
+                            <label for="premium-annual">
+                                <span class="mgu-option-amount">£${annualPremium.toFixed(2)}</span>
+                                <span class="mgu-option-sub">Annual</span>
+                            </label>
                         </div>
                     `;
                     
@@ -865,7 +894,7 @@ jQuery(document).ready(function($) {
         console.log('DEBUG - Loss cover checkbox always enabled, disabled state:', $('#policy-loss-cover').prop('disabled'));
         $('#policy-loss-cover-info').html(`
             <div style="font-size: 0.9em; color: #666;">
-                Loss cover option available - toggle as needed
+                Loss cover is not available for Laptops.
             </div>
         `);
         
@@ -979,19 +1008,11 @@ jQuery(document).ready(function($) {
         // Always keep the checkbox enabled - consumers can toggle as needed
         $('#policy-loss-cover').prop('disabled', false);
         
-        if (basketData && basketData.lossCoverAvailable) {
-            $('#policy-loss-cover-info').html(`
-                <div style="font-size: 0.9em; color: #666;">
-                    Loss cover available for this policy
-                </div>
-            `);
-        } else {
-            $('#policy-loss-cover-info').html(`
-                <div style="font-size: 0.9em; color: #999;">
-                    Loss cover may not be available for this policy
-                </div>
-            `);
-        }
+        $('#policy-loss-cover-info').html(`
+            <div style="font-size: 0.9em; color: #666;">
+                Loss cover is not available for Laptops.
+            </div>
+        `);
         
         console.log('DEBUG - Loss cover checkbox always enabled');
         
@@ -1145,6 +1166,23 @@ jQuery(document).ready(function($) {
     // Add event handler for premium period selection
     $(document).on('change', 'input[name="premium-period"]', function() {
         validateQuoteButton();
+    });
+
+    // Marketing toggle: reflect selected styling on click/change
+    $(document).on('change', '#policy-marketing', function() {
+        const $wrap = $(this).closest('.mgu-marketing-toggle');
+        const $label = $wrap.find('label[for="policy-marketing"]');
+        if ($(this).is(':checked')) {
+            $wrap.addClass('selected');
+            if ($label.length) {
+                $label.text('I agree to receive marketing communications');
+            }
+        } else {
+            $wrap.removeClass('selected');
+            if ($label.length) {
+                $label.text('Please do not send me Marketing Communications');
+            }
+        }
     });
     
     

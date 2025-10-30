@@ -694,6 +694,21 @@ class MGU_API {
             'mgu_api_options',
             'mgu_api_main_section'
         );
+
+        // UI setting: Show External Customer ID field on policy form
+        register_setting('mgu_api_options', 'mgu_api_show_external_id', array(
+            'type' => 'boolean',
+            'sanitize_callback' => array($this, 'sanitize_boolean'),
+            'default' => false
+        ));
+
+        add_settings_field(
+            'mgu_api_show_external_id',
+            __('Show External Customer ID field', 'mgu-api-integration'),
+            array($this, 'show_external_id_field_callback'),
+            'mgu_api_options',
+            'mgu_api_main_section'
+        );
     }
 
     /**
@@ -761,6 +776,21 @@ class MGU_API {
         echo '</tr>';
         echo '</table>';
         echo '<p class="description">' . __('Enter your production credentials for live transactions. These are used when Environment is set to Production.', 'mgu-api-integration') . '</p>';
+    }
+
+    /**
+     * Checkbox field to toggle External Customer ID visibility
+     */
+    public function show_external_id_field_callback() {
+        $show = get_option('mgu_api_show_external_id', false);
+        echo '<label for="mgu_api_show_external_id">';
+        echo '<input type="checkbox" name="mgu_api_show_external_id" id="mgu_api_show_external_id" value="1" ' . checked($show, true, false) . ' /> ';
+        echo esc_html__('Display External Customer ID field on the Create Policy step', 'mgu-api-integration');
+        echo '</label>';
+    }
+
+    public function sanitize_boolean($input) {
+        return (bool) $input;
     }
 
     /**

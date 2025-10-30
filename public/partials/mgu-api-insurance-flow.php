@@ -105,18 +105,21 @@ $gadget_icons = array(
         <div id="step-device" class="mgu-api-step" style="display: none;">
             <h3>Device Details</h3>
             <form id="device-form" class="mgu-api-form">
-                <div class="mgu-api-form-group">
-                    <label for="device-purchase-date">Purchase Date (Required)</label>
-                    <input type="date" id="device-purchase-date" class="mgu-api-input" required>
-                    <small class="mgu-api-help-text">Must be within the last 36 months</small>
+                <div class="mgu-form-row">
+                    <div class="mgu-api-form-group mgu-form-col">
+                        <label for="device-purchase-date">Purchase Date (Required)</label>
+                        <input type="date" id="device-purchase-date" class="mgu-api-input" required>
+                        <small class="mgu-api-help-text">Must be within the last 36 months</small>
+                    </div>
+                    <div class="mgu-api-form-group mgu-form-col">
+                        <label for="device-purchase-price">Purchase Price (Optional)</label>
+                        <input type="number" id="device-purchase-price" class="mgu-api-input" min="0" step="0.01">
+                    </div>
                 </div>
                 <div class="mgu-api-form-group">
-                    <label for="device-purchase-price">Purchase Price (Optional)</label>
-                    <input type="number" id="device-purchase-price" class="mgu-api-input" min="0" step="0.01">
-                </div>
-                <div class="mgu-api-form-group">
-                    <label for="device-serial-number">Serial Number (Optional)</label>
+                    <label for="device-serial-number">IMEI/Serial Number</label>
                     <input type="text" id="device-serial-number" class="mgu-api-input">
+                    <small class="mgu-api-help-text">Serial numbers can usually be found on the manufacturers packaging, on a sticker or in digital information in the devices settings. For Mobile phones go to the phone function and dial *#06# and the IMEI will be displayed.</small>
                 </div>
                 <!-- Memory Options (Dynamic Radio Buttons) -->
                 <div id="memory-options-container" class="mgu-api-form-group" style="display: none;">
@@ -219,31 +222,38 @@ $gadget_icons = array(
         <div class="mgu-api-step" id="step-policy" style="display: none;">
             <h3>Create Policy</h3>
             <form id="policy-form" class="mgu-api-form">
-                <div class="form-group">
-                    <label for="policy-first-name">First Name</label>
-                    <input type="text" id="policy-first-name" required>
+                <div class="mgu-form-row">
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-first-name">First Name</label>
+                        <input type="text" id="policy-first-name" required>
+                    </div>
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-last-name">Last Name</label>
+                        <input type="text" id="policy-last-name" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="policy-last-name">Last Name</label>
-                    <input type="text" id="policy-last-name" required>
-                </div>
-                <div class="form-group">
-                    <label for="policy-email">Email</label>
-                    <input type="email" id="policy-email" required>
-                </div>
-                <div class="form-group">
-                    <label for="policy-phone">Phone</label>
-                    <input type="tel" id="policy-phone" required>
+                <div class="mgu-form-row">
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-email">Email</label>
+                        <input type="email" id="policy-email" required>
+                    </div>
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-phone">Phone</label>
+                        <input type="tel" id="policy-phone" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="policy-company">Company Name (Optional)</label>
                     <input type="text" id="policy-company">
                 </div>
+                <?php $show_external = (bool) get_option('mgu_api_show_external_id', false); ?>
+                <?php if ($show_external) : ?>
                 <div class="form-group">
                     <label for="policy-external-id">External Customer ID (Optional)</label>
                     <input type="text" id="policy-external-id" placeholder="For integration with external systems">
                     <small class="mgu-api-help-text">Leave blank if not needed</small>
                 </div>
+                <?php endif; ?>
                 <div class="form-group">
                     <label for="policy-address1">Address Line 1</label>
                     <input type="text" id="policy-address1" required>
@@ -256,22 +266,25 @@ $gadget_icons = array(
                     <label for="policy-address3">Address Line 3 (Optional)</label>
                     <input type="text" id="policy-address3">
                 </div>
-                <div class="form-group">
-                    <label for="policy-address4">Address Line 4 (Optional)</label>
-                    <input type="text" id="policy-address4">
-                </div>
-                <div class="form-group">
-                    <label for="policy-postcode">Postcode</label>
-                    <input type="text" id="policy-postcode" required>
+                <div class="mgu-form-row">
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-address4">Address Line 4 (Optional)</label>
+                        <input type="text" id="policy-address4">
+                    </div>
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-postcode">Postcode</label>
+                        <input type="text" id="policy-postcode" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="policy-home-phone">Home Phone (Optional)</label>
                     <input type="tel" id="policy-home-phone">
                 </div>
                 <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="policy-marketing"> I agree to receive marketing communications
-                    </label>
+                    <div class="mgu-api-radio-option mgu-option-box mgu-marketing-toggle selected">
+                        <input type="checkbox" id="policy-marketing" checked>
+                        <label for="policy-marketing">I agree to receive marketing communications</label>
+                    </div>
                 </div>
                 
                 <h4>Payment Details</h4>
@@ -279,13 +292,15 @@ $gadget_icons = array(
                     <label for="policy-account-name">Account Holder Name</label>
                     <input type="text" id="policy-account-name" required>
                 </div>
-                <div class="form-group">
-                    <label for="policy-account-number">Account Number</label>
-                    <input type="text" id="policy-account-number" required pattern="[0-9]{8,12}" maxlength="12">
-                </div>
-                <div class="form-group">
-                    <label for="policy-sort-code">Sort Code</label>
-                    <input type="text" id="policy-sort-code" required pattern="[0-9]{6}" maxlength="6" placeholder="123456">
+                <div class="mgu-form-row">
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-account-number">Account Number</label>
+                        <input type="text" id="policy-account-number" required pattern="[0-9]{8,12}" maxlength="12">
+                    </div>
+                    <div class="form-group mgu-form-col">
+                        <label for="policy-sort-code">Sort Code</label>
+                        <input type="text" id="policy-sort-code" required pattern="[0-9]{6}" maxlength="6" placeholder="123456">
+                    </div>
                 </div>
                 
                 <button type="submit" class="mgu-api-button">Create Policy & Setup Payment</button>
