@@ -21,15 +21,44 @@ $api_client = new MGU_API_Client();
 ?>
 
 <div class="mgu-api-insurance-flow">
-    <h2>MGU Insurance Policy Flow</h2>
-    <p class="mgu-api-description">Get a quote for your gadget insurance with multiple gadgets, loss cover options, and comprehensive coverage.</p>
+    
+    <p class="mgu-api-description mgu-promo-box">Get a quote for your gadget insurance with multiple gadgets, loss cover options, and comprehensive coverage.</p>
 
     <div class="mgu-api-steps">
         <!-- Step 1: Gadget Type Selection -->
         <div id="step-gadget-type" class="mgu-api-step">
             <h3>Select Gadget Type</h3>
             <div class="mgu-api-form-group">
-                <select id="gadget-type-select" class="mgu-api-select">
+                <!-- Icon Grid (visible control) -->
+                <div class="mgu-gadget-grid" role="radiogroup" aria-label="Select Gadget Type">
+                    <button type="button" class="mgu-gadget-option mgu-gadget--MobilePhone" role="radio" aria-checked="false" data-value="MobilePhone">
+                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-label">Mobile Phone</span>
+                    </button>
+                    <button type="button" class="mgu-gadget-option mgu-gadget--Laptop" role="radio" aria-checked="false" data-value="Laptop">
+                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-label">Laptop</span>
+                    </button>
+                    <button type="button" class="mgu-gadget-option mgu-gadget--Tablet" role="radio" aria-checked="false" data-value="Tablet">
+                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-label">Tablet</span>
+                    </button>
+                    <button type="button" class="mgu-gadget-option mgu-gadget--VRHeadset" role="radio" aria-checked="false" data-value="VRHeadset">
+                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-label">VR Headset</span>
+                    </button>
+                    <button type="button" class="mgu-gadget-option mgu-gadget--Watch" role="radio" aria-checked="false" data-value="Watch">
+                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-label">Watch</span>
+                    </button>
+                    <button type="button" class="mgu-gadget-option mgu-gadget--GamesConsole" role="radio" aria-checked="false" data-value="GamesConsole">
+                        <span class="mgu-gadget-icon" aria-hidden="true"></span>
+                        <span class="mgu-gadget-label">Games Console</span>
+                    </button>
+                </div>
+
+                <!-- Original select (visually hidden for compatibility) -->
+                <select id="gadget-type-select" class="mgu-api-select mgu-visually-hidden" aria-hidden="true" tabindex="-1">
                     <option value="">Select a gadget type...</option>
                     <option value="MobilePhone">Mobile Phone</option>
                     <option value="Laptop">Laptop</option>
