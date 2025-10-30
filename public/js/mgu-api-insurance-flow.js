@@ -910,7 +910,7 @@ jQuery(document).ready(function($) {
         $('#policy-loss-cover').prop('disabled', false);
         console.log('DEBUG - Loss cover checkbox always enabled, disabled state:', $('#policy-loss-cover').prop('disabled'));
         $('#policy-loss-cover-info').html(`
-            <div style="font-size: 0.9em; color: #666;">
+            <div class="mgu-help-text-small">
                 Loss cover is not available for Laptops.
             </div>
         `);
@@ -1066,7 +1066,7 @@ jQuery(document).ready(function($) {
         $('#policy-loss-cover').prop('disabled', false);
         
         $('#policy-loss-cover-info').html(`
-            <div style="font-size: 0.9em; color: #666;">
+            <div class="mgu-help-text-small">
                 Loss cover is not available for Laptops.
             </div>
         `);
@@ -1074,12 +1074,12 @@ jQuery(document).ready(function($) {
         console.log('DEBUG - Loss cover checkbox always enabled');
         
         // Update the premium display with detailed breakdown
-        let premiumHtml = '<div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">';
-        premiumHtml += '<h4>Your Quote Summary</h4>';
+        let premiumHtml = '<div class="mgu-quote-summary-container">';
+        premiumHtml += '<h4 class="mgu-quote-summary-title">Your Quote Summary</h4>';
         
         // Show individual gadgets
         if (individualGadgets.length > 0) {
-            premiumHtml += '<div style="margin: 10px 0;">';
+            premiumHtml += '<div class="mgu-gadget-items-wrapper">';
             individualGadgets.forEach((gadget, index) => {
                 // Determine display base premium by selected period
                 const baseDisplay = (window.selectedPremiumPeriod === 'Annual'
@@ -1096,16 +1096,16 @@ jQuery(document).ready(function($) {
                 // Get gadget details from basketGadgets array
                 const gadgetDetails = basketGadgets[index];
                 premiumHtml += `
-                    <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 3px; background: white; position: relative;">
-                        <h5 style="margin: 0 0 5px 0;">Gadget ${index + 1}: ${gadget.make} ${gadget.model}</h5>
-                        <p style="margin: 2px 0;"><strong>Memory:</strong> ${gadgetDetails ? (gadgetDetails.memoryInstalled || 'N/A') : 'N/A'}</p>
-                        <p style="margin: 2px 0;"><strong>Purchase Price:</strong> £${gadgetDetails ? gadgetDetails.purchasePrice.toFixed(2) : '0.00'}</p>
-                        <p style="margin: 2px 0;"><strong>Purchase Date:</strong> ${gadgetDetails ? gadgetDetails.purchaseDate : 'N/A'}</p>
-                        <p style="margin: 2px 0;"><strong>Premium Period:</strong> ${window.selectedPremiumPeriod || '—'}</p>
-                        <p style="margin: 2px 0;"><strong>Premium:</strong> £${baseDisplay.toFixed(2)}`;
+                    <div class="mgu-gadget-item-detail">
+                        <h5>Gadget ${index + 1}: ${gadget.make} ${gadget.model}</h5>
+                        <p><strong>Memory:</strong> ${gadgetDetails ? (gadgetDetails.memoryInstalled || 'N/A') : 'N/A'}</p>
+                        <p><strong>Purchase Price:</strong> £${gadgetDetails ? gadgetDetails.purchasePrice.toFixed(2) : '0.00'}</p>
+                        <p><strong>Purchase Date:</strong> ${gadgetDetails ? gadgetDetails.purchaseDate : 'N/A'}</p>
+                        <p><strong>Premium Period:</strong> ${window.selectedPremiumPeriod || '—'}</p>
+                        <p><strong>Premium:</strong> £${baseDisplay.toFixed(2)}`;
                 
                 if (gadget.discountPercent > 0) {
-                    premiumHtml += ` <span style="color: #28a745; font-weight: bold;">(${gadget.discountPercent}% discount applied)</span>`;
+                    premiumHtml += ` <span class="mgu-discount-amount">(${gadget.discountPercent}% discount applied)</span>`;
                 }
                 
                 premiumHtml += '</p>';
@@ -1114,7 +1114,7 @@ jQuery(document).ready(function($) {
                 const lossCoverEnabled = $('#policy-loss-cover').is(':checked');
                 if (lossCoverEnabled && (lossMonthly > 0 || lossAnnual > 0)) {
                     const lossDisplay = window.selectedPremiumPeriod === 'Annual' ? lossAnnual : lossMonthly;
-                    premiumHtml += `<p style="margin: 2px 0;"><strong>Loss Cover:</strong> £${lossDisplay.toFixed(2)}</p>`;
+                    premiumHtml += `<p><strong>Loss Cover:</strong> £${lossDisplay.toFixed(2)}</p>`;
                 }
                 
                 // Add delete button with policy ID for removal
@@ -1126,44 +1126,44 @@ jQuery(document).ready(function($) {
         }
         
         // Show detailed breakdown
-        premiumHtml += '<div style="border-top: 2px solid #ddd; padding-top: 10px; margin-top: 10px;">';
+        premiumHtml += '<div class="mgu-quote-breakdown">';
         
         // Calculate pre-discount total
         const preDiscountTotal = basePremium + lossCoverPremium;
         const discountAmount = discountTotal > 0 ? preDiscountTotal * discountTotal : 0;
         
         // Gross premium before discount
-        premiumHtml += `<p style="margin: 5px 0;"><strong>Gross Premium (before discount): £${basePremium.toFixed(2)}</strong></p>`;
+        premiumHtml += `<p class="mgu-quote-breakdown-bold">Gross Premium (before discount): £${basePremium.toFixed(2)}</p>`;
         
         // Loss cover before discount
         if (lossCoverPremium > 0) {
-            premiumHtml += `<p style="margin: 5px 0;">Loss Cover (before discount): £${lossCoverPremium.toFixed(2)}</p>`;
+            premiumHtml += `<p>Loss Cover (before discount): £${lossCoverPremium.toFixed(2)}</p>`;
         }
         
         // Total premium before discount
-        premiumHtml += `<p style="margin: 5px 0; font-weight: bold;">Total Premium (before discount): £${preDiscountTotal.toFixed(2)}</p>`;
+        premiumHtml += `<p class="mgu-quote-breakdown-bold">Total Premium (before discount): £${preDiscountTotal.toFixed(2)}</p>`;
         
         // Discount percentage and note
         const discountPercentage = (discountTotal * 100).toFixed(0);
         if (numberOfPolicies === 1) {
-            premiumHtml += `<p style="margin: 5px 0; color: #666; font-style: italic;">Discount: 0% - Insure one more gadget to get 10% discount</p>`;
+            premiumHtml += `<p class="mgu-quote-discount-info">Discount: 0% - Insure one more gadget to get 10% discount</p>`;
         } else if (numberOfPolicies === 2) {
-            premiumHtml += `<p style="margin: 5px 0; color: #28a745; font-weight: bold;">Discount: ${discountPercentage}% - Insure 4 or more gadgets for our maximum discount</p>`;
+            premiumHtml += `<p class="mgu-quote-discount-positive">Discount: ${discountPercentage}% - Insure 4 or more gadgets for our maximum discount</p>`;
         } else if (numberOfPolicies === 3) {
-            premiumHtml += `<p style="margin: 5px 0; color: #28a745; font-weight: bold;">Discount: ${discountPercentage}% - Insure 4 or more gadgets for our maximum discount</p>`;
+            premiumHtml += `<p class="mgu-quote-discount-positive">Discount: ${discountPercentage}% - Insure 4 or more gadgets for our maximum discount</p>`;
         } else if (numberOfPolicies >= 4) {
-            premiumHtml += `<p style="margin: 5px 0; color: #28a745; font-weight: bold;">Discount: ${discountPercentage}%</p>`;
+            premiumHtml += `<p class="mgu-quote-discount-positive">Discount: ${discountPercentage}%</p>`;
         } else {
-            premiumHtml += `<p style="margin: 5px 0; color: #28a745; font-weight: bold;">Discount: ${discountPercentage}%</p>`;
+            premiumHtml += `<p class="mgu-quote-discount-positive">Discount: ${discountPercentage}%</p>`;
         }
         
         // Discount amount
         if (discountAmount > 0) {
-            premiumHtml += `<p style="margin: 5px 0; color: #28a745; font-weight: bold;">Discount Amount: -£${discountAmount.toFixed(2)}</p>`;
+            premiumHtml += `<p class="mgu-discount-amount">Discount Amount: -£${discountAmount.toFixed(2)}</p>`;
         }
         
         // Final premium
-        premiumHtml += `<p style="margin: 10px 0; font-size: 1.2em; font-weight: bold; color: #007cba;">Final Premium: £${totalPremium.toFixed(2)}</p>`;
+        premiumHtml += `<p class="mgu-quote-final-premium">Final Premium: £${totalPremium.toFixed(2)}</p>`;
         premiumHtml += '</div>';
         premiumHtml += '</div>';
         

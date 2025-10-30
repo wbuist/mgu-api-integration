@@ -847,3 +847,78 @@ input[type="checkbox"]#policy-loss-cover {
         margin-top: 10px;
     }
 }
+
+/* Quote summary and breakdown styling */
+.mgu-quote-summary-container {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.mgu-quote-summary-title {
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+}
+
+.mgu-gadget-items-wrapper {
+    margin: 10px 0;
+}
+
+.mgu-gadget-item-detail {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 3px;
+    background: white;
+    position: relative;
+}
+
+.mgu-gadget-item-detail h5 {
+    margin: 0 0 5px 0;
+}
+
+.mgu-gadget-item-detail p {
+    margin: 2px 0;
+}
+
+.mgu-quote-breakdown {
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.mgu-quote-breakdown p {
+    margin: 5px 0;
+}
+
+.mgu-quote-breakdown-bold {
+    font-weight: bold;
+}
+
+.mgu-quote-discount-info {
+    color: #666;
+    font-style: italic;
+}
+
+.mgu-quote-discount-positive {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.mgu-discount-amount {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.mgu-quote-final-premium {
+    margin: 10px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #007cba;
+}
+
+.mgu-help-text-small {
+    font-size: 0.9em;
+    color: #666;
+}
