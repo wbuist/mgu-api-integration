@@ -29,7 +29,7 @@ if (!defined('WPINC')) {
         <div class="mgu-shortcode-wrapper" style="display: flex; gap: 10px; align-items: center; margin: 15px 0;">
             <input type="text" 
                    id="mgu-shortcode-input" 
-                   value="[mgu_api_test_flow]" 
+                   value="[gadget_insurance_sales]" 
                    readonly 
                    style="flex: 1; padding: 10px 15px; font-family: monospace; font-size: 14px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: text;"
                    onclick="this.select();">

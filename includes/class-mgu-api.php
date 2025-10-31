@@ -715,7 +715,7 @@ class MGU_API {
         register_setting('mgu_api_options', 'mgu_api_sandbox_client_id', array(
             'type' => 'string',
             'sanitize_callback' => array($this, 'sanitize_client_id'),
-            'default' => 'APITEST001'
+            'default' => ''
         ));
 
         register_setting('mgu_api_options', 'mgu_api_sandbox_client_secret', array(
@@ -747,7 +747,7 @@ class MGU_API {
         register_setting('mgu_api_options', 'mgu_api_client_id', array(
             'type' => 'string',
             'sanitize_callback' => array($this, 'sanitize_client_id'),
-            'default' => 'APITEST001'
+            'default' => ''
         ));
 
         register_setting('mgu_api_options', 'mgu_api_client_secret', array(
@@ -993,7 +993,7 @@ class MGU_API {
      * Register shortcodes
      */
     public function register_shortcodes() {
-        add_shortcode('mgu_api_test_flow', array($this, 'render_test_flow'));
+        add_shortcode('gadget_insurance_sales', array($this, 'render_test_flow'));
     }
 
     /**
@@ -1112,7 +1112,7 @@ class MGU_API {
             return get_option('mgu_api_production_client_id', '');
         }
         
-        return get_option('mgu_api_sandbox_client_id', 'APITEST001');
+        return get_option('mgu_api_sandbox_client_id', '');
     }
 
     /**

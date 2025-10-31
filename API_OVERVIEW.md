@@ -102,7 +102,7 @@ The updated API includes several enhancements:
 The WordPress plugin provides a simple interface for:
 - **Environment Selection:** Toggle between sandbox and production
 - **Credential Management:** Separate Client ID and Secret for each environment
-- **Test Interface:** Built-in test flow using the `[mgu_api_test_flow]` shortcode
+- **Test Interface:** Built-in test flow using the `[gadget_insurance_sales]` shortcode
 - **API Testing:** Admin panel for testing individual endpoints
 
 ## 11. Next steps
