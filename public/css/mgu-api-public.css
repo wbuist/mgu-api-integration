@@ -6,6 +6,14 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     font-size: 16px;
+    color-scheme: light;
+}
+
+/* Contain floated steps */
+.mgu-api-steps::after {
+    content: "";
+    display: block;
+    clear: both;
 }
 
 .mgu-api-step {
@@ -14,6 +22,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     position: relative;
+    box-sizing: border-box;
 }
 
 .mgu-api-step h3 {
@@ -43,6 +52,11 @@
     padding-right: 40px;
 }
 
+/* Ensure selects look light (not dark grey) */
+.mgu-api-select { color: #222; background-color: #ffffff !important; }
+.mgu-api-select:disabled { background-color: #f5f5f5 !important; color: #888; }
+.mgu-api-select { color-scheme: light; }
+
 .mgu-api-select option {
     padding: 12px;
     font-size: 16px;
@@ -66,6 +80,22 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Ensure equal heights for side-by-side inputs */
+.mgu-form-row .mgu-api-input {
+    height: 44px;
+}
+
+/* Normalize number input height by removing spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
 }
 
 .mgu-api-button {
@@ -384,6 +414,21 @@
     margin-bottom: 1.5em;
 }
 
+/* Two-column row for purchase date/price on desktop */
+.mgu-form-row {
+    display: block;
+}
+@media (min-width: 900px) {
+    .mgu-form-row {
+        display: flex;
+        gap: 20px;
+    }
+    .mgu-form-row .mgu-form-col {
+        flex: 0 0 45%;
+        max-width: 45%;
+    }
+}
+
 .mgu-api-form-group label {
     display: block;
     margin-bottom: 0.5em;
@@ -437,6 +482,10 @@
     margin-top: 5px;
 }
 
+.mgu-period-help {
+    margin-top: 8px;
+}
+
 .mgu-api-radio-group {
     display: flex;
     flex-direction: column;
@@ -485,6 +534,204 @@
 .mgu-api-button.enabled:hover {
     background-color: #005a87 !important;
 } 
+
+/* Modern UI: Section cards and active highlighting */
+.mgu-api-step {
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.mgu-api-step.is-active {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0,115,170,0.12), 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.mgu-api-step h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Option boxes (dynamic choices) */
+.mgu-option-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 14px;
+    border: 2px solid #e6e6e6;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.mgu-option-box:hover {
+    border-color: #bcd8e8;
+    background: #f7fbfe;
+}
+
+.mgu-option-box input[type="radio"] {
+    transform: scale(1.1);
+}
+
+.mgu-option-box.selected,
+.mgu-option-box input[type="radio"]:checked + label,
+.mgu-option-box input[type="radio"]:checked {
+    border-color: #0073aa;
+    background: #e7f3ff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+/* Option box content */
+.mgu-option-amount { font-weight: 700; font-size: 1.05rem; color: #0f2e46; }
+.mgu-option-sub { font-size: 0.9rem; color: #444; }
+
+/* Grid layouts for dynamic option groups */
+#memory-radio-buttons,
+#premium-period-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+@media (min-width: 640px) {
+    #memory-radio-buttons,
+    #premium-period-buttons {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (min-width: 1024px) {
+    #memory-radio-buttons,
+    #premium-period-buttons {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Buttons: consistent appearance */
+.mgu-api-button {
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+}
+
+.mgu-api-button-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.mgu-api-button-secondary:hover {
+    background: #5a6268;
+}
+
+/* Summary and quote panels */
+.mgu-api-quote-details,
+#total-premium-display {
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+
+#total-premium-display h4,
+.mgu-api-quote-details h4 {
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+}
+
+#total-premium-display .final-price,
+.mgu-api-quote-details .final-price {
+    font-size: 1.25rem;
+    color: #0073aa;
+    font-weight: 700;
+}
+
+/* Checkbox/toggle: larger and brand accent, keep native for a11y */
+input[type="checkbox"]#policy-loss-cover {
+    accent-color: #0073aa;
+    transform: scale(1.15);
+}
+
+/* Marketing toggle styled like option boxes */
+.mgu-marketing-toggle input[type="checkbox"] { position: absolute; opacity: 0; }
+.mgu-marketing-toggle label { cursor: pointer; }
+.mgu-marketing-toggle.selected { border-color: #0073aa; background: #e7f3ff; }
+
+/* Loss cover toggle styled like option boxes */
+.mgu-loss-toggle input[type="checkbox"] { position: absolute; opacity: 0; }
+.mgu-loss-toggle label { cursor: pointer; }
+.mgu-loss-toggle.selected { border-color: #0073aa; background: #e7f3ff; }
+
+/* Make loss toggle a square like other options */
+.mgu-loss-row { gap: 12px; }
+.mgu-loss-toggle {
+    min-height: 88px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.mgu-loss-toggle label { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.mgu-loss-line { font-weight: 700; }
+.mgu-loss-text { font-size: 0.95rem; }
+.mgu-loss-toggle .mgu-tick {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #0073aa;
+    border-radius: 4px;
+    background: #ffffff;
+}
+.mgu-loss-toggle.selected .mgu-tick {
+    background: #0073aa;
+    color: #ffffff;
+}
+.mgu-loss-toggle.selected .mgu-tick::after {
+    content: '\2713';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    font-size: 14px;
+}
+
+/* Form labels and help text */
+.mgu-api-form-group label {
+    font-weight: 600;
+}
+
+.mgu-api-help-text {
+    color: #5f6b76;
+}
+
+/* Responsive spacing */
+@media (max-width: 640px) {
+    .mgu-api-insurance-flow {
+        padding: 16px;
+    }
+    .mgu-api-button {
+        width: 100%;
+    }
+}
+
+/* Desktop: place Manufacturer and Model steps side by side */
+@media (min-width: 900px) {
+    #step-manufacturer,
+    #step-model {
+        display: block;
+        float: left;
+        width: 47%;
+        box-sizing: border-box;
+    }
+    #step-manufacturer { margin-right: 6%; }
+    #step-model { margin-right: 0; }
+    #step-device { clear: both; }
+}
 
 /* Promo box can be hidden by theme via CSS */
 .mgu-promo-box {}
@@ -576,4 +823,131 @@
 .mgu-gadget-option.selected {
     border-color: var(--mgu-accent);
     background: color-mix(in srgb, var(--mgu-accent) 12%, #ffffff);
+}
+
+/* Delete gadget button - responsive positioning */
+.mgu-delete-gadget-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.mgu-delete-gadget-btn:hover {
+    background: #c82333;
+}
+
+@media (max-width: 640px) {
+    .mgu-delete-gadget-btn {
+        position: static;
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+/* Quote summary and breakdown styling */
+.mgu-quote-summary-container {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.mgu-quote-summary-title {
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+}
+
+.mgu-gadget-items-wrapper {
+    margin: 10px 0;
+}
+
+.mgu-gadget-item-detail {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 3px;
+    background: white;
+    position: relative;
+}
+
+.mgu-gadget-item-detail h5 {
+    margin: 0 0 5px 0;
+}
+
+.mgu-gadget-item-detail p {
+    margin: 2px 0;
+}
+
+.mgu-quote-breakdown {
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.mgu-quote-breakdown p {
+    margin: 5px 0;
+}
+
+.mgu-quote-breakdown-bold {
+    font-weight: bold;
+}
+
+.mgu-quote-discount-info {
+    color: #666;
+    font-style: italic;
+}
+
+.mgu-quote-discount-positive {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.mgu-discount-amount {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.mgu-quote-final-premium {
+    margin: 10px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #007cba;
+}
+
+.mgu-help-text-small {
+    font-size: 0.9em;
+    color: #666;
+}
+
+/* Documents notice styling */
+.mgu-documents-notice {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.mgu-documents-notice p {
+    margin: 0;
+    color: #856404;
+}
+
+.mgu-documents-notice a {
+    color: #0073aa;
+    text-decoration: underline;
+}
+
+.mgu-documents-notice a:hover {
+    color: #005a87;
+    text-decoration: none;
 }
