@@ -175,12 +175,17 @@ $gadget_icons = array(
                         <span class="mgu-option-amount">Annual</span>
                     </button>
                 </div>
-                <div id="policy-period-help" class="mgu-api-help-text" style="margin-top:8px;">Premiums will be shown when you choose payment period.</div>
+                <div id="policy-period-help" class="mgu-api-help-text mgu-period-help">Premiums will be shown when you choose payment period.</div>
             </div>
 
             <!-- Total Premium Display -->
             <div id="total-premium-display" class="mgu-api-total-premium">
                 <!-- Total premium -->
+            </div>
+            
+            <!-- Important Documents Notice -->
+            <div class="mgu-documents-notice">
+                <p><strong>Important:</strong> Please review the Insurance Product Information Document (IPID) and policy wording for this insurance to be sure that it meets your needs. You can view these documents <a href="https://wcsinsurance.co.uk/policyholders/documents/" target="_blank" rel="noopener noreferrer">here</a>.</p>
             </div>
             
             <!-- Action Buttons -->

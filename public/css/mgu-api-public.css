@@ -482,6 +482,10 @@ input[type="number"] {
     margin-top: 5px;
 }
 
+.mgu-period-help {
+    margin-top: 8px;
+}
+
 .mgu-api-radio-group {
     display: flex;
     flex-direction: column;
@@ -921,4 +925,29 @@ input[type="checkbox"]#policy-loss-cover {
 .mgu-help-text-small {
     font-size: 0.9em;
     color: #666;
+}
+
+/* Documents notice styling */
+.mgu-documents-notice {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.mgu-documents-notice p {
+    margin: 0;
+    color: #856404;
+}
+
+.mgu-documents-notice a {
+    color: #0073aa;
+    text-decoration: underline;
+}
+
+.mgu-documents-notice a:hover {
+    color: #005a87;
+    text-decoration: none;
 }
