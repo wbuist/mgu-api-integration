@@ -6,7 +6,7 @@ Production-ready plugin that integrates with the MGU API to offer a multi-gadget
 
 1. Install the release ZIP from GitHub Releases or "Download ZIP".
 2. Activate the plugin in WordPress.
-3. Add the shortcode `[mgu_api_test_flow]` to a page.
+3. Add the shortcode `[gadget_insurance_sales]` to a page.
 
 ## Development
 

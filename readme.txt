@@ -4,7 +4,7 @@ Tags: insurance, api, gadgets, quotes, mgu
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,7 +25,7 @@ Features include cached API tokens, robust AJAX handlers, externalized assets, a
 
 1. Upload the ZIP via Plugins → Add New → Upload Plugin
 2. Activate the plugin
-3. Add the shortcode `[mgu_api_test_flow]` to a page (uses the production `insurance-flow` under the hood)
+3. Add the shortcode `[gadget_insurance_sales]` to a page (uses the production `insurance-flow` under the hood)
 
 == Frequently Asked Questions ==
 
@@ -37,10 +37,31 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 
 == Changelog ==
 
+= 1.0.2 =
+- Enhanced UI with modern card-based layout, responsive gadget icons, and option boxes
+- Added premium period and loss cover toggles in quote review step
+- Implemented delete gadget functionality in quote summary
+- Added shortcode copy feature to admin settings page
+- Updated shortcode from [mgu_api_test_flow] to [gadget_insurance_sales]
+- Added comprehensive styling guide for developer customization
+- Moved all inline styles to CSS classes
+- Added customer data update functionality
+- Added documents notice above Buy Policy button
+
+= 1.0.1 =
+- Fixed customer ID type casting issue in policy creation
+- Improved error handling and validation
+
 = 1.0.0 =
 Initial production-ready structure with insurance flow, token caching, and multi-gadget basket.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Update includes UI improvements, new functionality, and a new shortcode name.
+
+= 1.0.1 =
+Bug fix release for customer data handling.
 
 = 1.0.0 =
 Initial release.
