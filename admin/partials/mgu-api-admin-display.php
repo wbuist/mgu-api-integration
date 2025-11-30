@@ -60,8 +60,6 @@ if (!defined('WPINC')) {
         $api_client = new MGU_API_Client();
         $test_result = $api_client->test_connection();
         
-        error_log('Test connection result: ' . print_r($test_result, true));
-        
         if (is_wp_error($test_result)) {
             error_log('Test connection error: ' . $test_result->get_error_message());
             error_log('Test connection error data: ' . print_r($test_result->get_error_data(), true));
@@ -69,7 +67,6 @@ if (!defined('WPINC')) {
             echo esc_html($test_result->get_error_message());
             echo '</p></div>';
         } else {
-            error_log('Test connection successful');
             echo '<div class="notice notice-success"><p>';
             _e('API connection successful!', 'mgu-api-integration');
             echo '</p></div>';

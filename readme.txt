@@ -4,7 +4,7 @@ Tags: insurance, api, gadgets, quotes, mgu
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,12 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 
 == Changelog ==
 
+= 1.0.5 =
+- Removed all verbose debug logging that was writing to error logs on every page load
+- Cleaned up production code by removing debug statements and AJAX handler verbose logging
+- Error logs now only appear when actual errors occur (API failures, validation errors)
+- **Important:** Users upgrading from previous versions should clear their error logs as they may contain extensive debug output from earlier versions
+
 = 1.0.4 =
 - Fixed production API URLs: corrected auth endpoint to use /jauth (instead of /auth) and base URL to api.mygadgetumbrella.com
 - Resolved JWT issuer validation error that was causing continuous authentication failures in production
@@ -61,6 +67,9 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 Initial production-ready structure with insurance flow, token caching, and multi-gadget basket.
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+Performance and code quality update. Removed verbose debug logging that was causing log bloat. **Please clear your error logs after updating** as they may contain extensive debug output from previous versions. Error logging now only occurs for actual errors.
 
 = 1.0.4 =
 Critical fix for production environment - fixes authentication failures. Update immediately if using production mode.
