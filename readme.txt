@@ -4,7 +4,7 @@ Tags: insurance, api, gadgets, quotes, mgu
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,11 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 
 == Changelog ==
 
+= 1.0.4 =
+- Fixed production API URLs: corrected auth endpoint to use /jauth (instead of /auth) and base URL to api.mygadgetumbrella.com
+- Resolved JWT issuer validation error that was causing continuous authentication failures in production
+- Updated API documentation with correct production endpoints
+
 = 1.0.2 =
 - Enhanced UI with modern card-based layout, responsive gadget icons, and option boxes
 - Added premium period and loss cover toggles in quote review step
@@ -56,6 +61,9 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 Initial production-ready structure with insurance flow, token caching, and multi-gadget basket.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+Critical fix for production environment - fixes authentication failures. Update immediately if using production mode.
 
 = 1.0.2 =
 Update includes UI improvements, new functionality, and a new shortcode name.

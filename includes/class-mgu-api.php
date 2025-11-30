@@ -1157,7 +1157,7 @@ class MGU_API {
         $environment = $this->get_current_environment();
         
         if ($environment === 'production') {
-            return 'https://api.mygadgetumbrella.com/auth';
+            return 'https://join.mygadgetumbrella.com/jauth';
         }
         
         return 'https://sandbox.api.mygadgetumbrella.com/sbauth';
