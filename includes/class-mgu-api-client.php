@@ -78,18 +78,10 @@ class MGU_API_Client {
         
         // If no valid token, get one
         if (empty($this->access_token) || time() >= $this->token_expiry - 300) {
-            error_log('MGU API Debug - No valid token found, refreshing...');
             $this->refresh_token();
-        } else {
-            error_log('MGU API Debug - Using cached token, expires in: ' . ($this->token_expiry - time()) . ' seconds');
         }
         
         $this->logger = new MGU_API_Logger();
-
-        error_log('MGU API Debug - Constructor values:');
-        error_log('MGU API Debug - endpoint: ' . $this->endpoint);
-        error_log('MGU API Debug - client_id: ' . $this->client_id);
-        error_log('MGU API Debug - client_secret: ' . substr($this->client_secret, 0, 5) . '...');
     }
 
     /**
@@ -98,7 +90,6 @@ class MGU_API_Client {
     private function get_valid_token() {
         // Token should already be valid from constructor, but double-check
         if (empty($this->access_token) || time() >= $this->token_expiry - 300) { // Refresh 5 minutes before expiry
-            error_log('MGU API Debug - Token expired during request, refreshing...');
             $this->refresh_token();
         }
         return $this->access_token;
@@ -117,18 +108,13 @@ class MGU_API_Client {
 
         // Get the auth URL from the plugin instance
         global $mgu_api_plugin;
-        error_log('MGU API Debug - Plugin instance available: ' . ($mgu_api_plugin ? 'Yes' : 'No'));
         
         if ($mgu_api_plugin) {
             $auth_url = $mgu_api_plugin->get_current_auth_url() . '/oauth/token';
-            error_log('MGU API Debug - Using plugin auth URL: ' . $auth_url);
         } else {
             // Fallback to legacy URL construction
             $auth_url = 'https://sandbox.api.mygadgetumbrella.com/sbauth/oauth/token';
-            error_log('MGU API Debug - Using fallback auth URL: ' . $auth_url);
         }
-        
-        error_log('MGU API Debug - Final token refresh URL: ' . $auth_url);
         
         $response = wp_remote_post($auth_url, array(
             'headers' => array(
@@ -149,7 +135,6 @@ class MGU_API_Client {
 
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
-        error_log('MGU API Debug - Token refresh response: ' . $body);
 
         if (empty($data['access_token'])) {
             error_log('MGU API Debug - Invalid token response: ' . print_r($data, true));
@@ -164,8 +149,6 @@ class MGU_API_Client {
         set_transient('mgu_api_access_token', $this->access_token, $cache_duration);
         set_transient('mgu_api_token_expiry', $this->token_expiry, $cache_duration);
         
-        error_log('MGU API Debug - Token refresh successful, expires in: ' . $data['expires_in'] . ' seconds');
-        error_log('MGU API Debug - Token cached for: ' . $cache_duration . ' seconds');
         return true;
     }
 
@@ -186,18 +169,15 @@ class MGU_API_Client {
         }
 
         $url = rtrim($this->endpoint, '/') . '/' . ltrim($endpoint, '/');
-        error_log('MGU API Debug - Request URL: ' . $url);
         
         // For GET requests, append the data as query parameters
         if ($method === 'GET' && !empty($data)) {
             $url = add_query_arg($data, $url);
-            error_log('MGU API Debug - GET parameters: ' . print_r($data, true));
         }
         
         // For POST requests with query parameters (like addGadgets)
         if ($method === 'POST' && !empty($query_params)) {
             $url = add_query_arg($query_params, $url);
-            error_log('MGU API Debug - POST query parameters: ' . print_r($query_params, true));
         }
 
         // Get a valid token
@@ -206,7 +186,6 @@ class MGU_API_Client {
             error_log('MGU API Debug - Failed to get valid token');
             return new WP_Error('auth_error', 'Failed to obtain valid access token');
         }
-        error_log('MGU API Debug - Using token: ' . substr($token, 0, 20) . '...');
 
         $args = array(
             'method' => $method,
@@ -216,12 +195,10 @@ class MGU_API_Client {
                 'Accept' => 'application/json'
             )
         );
-        error_log('MGU API Debug - Request headers: ' . print_r($args['headers'], true));
 
         // Only add body for non-GET requests
         if ($method !== 'GET' && !empty($data)) {
             $args['body'] = json_encode($data);
-            error_log('MGU API Debug - Request body: ' . $args['body']);
         }
 
         $response = wp_remote_request($url, $args);
@@ -234,13 +211,9 @@ class MGU_API_Client {
         $response_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         $response_data = json_decode($body, true);
-        
-        error_log('MGU API Debug - Response code: ' . $response_code);
-        error_log('MGU API Debug - Response body: ' . $body);
 
         // Handle token expiration
         if ($response_code === 401) {
-            error_log('MGU API Debug - Token expired, clearing cache and attempting refresh');
             // Clear cached token
             delete_transient('mgu_api_access_token');
             delete_transient('mgu_api_token_expiry');

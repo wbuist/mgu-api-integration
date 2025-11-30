@@ -40,17 +40,6 @@ class MGU_API {
      * Initialize the class and set its properties.
      */
     public function __construct() {
-        // Enable WordPress debug logging
-        if (!defined('WP_DEBUG')) {
-            define('WP_DEBUG', true);
-        }
-        if (!defined('WP_DEBUG_LOG')) {
-            define('WP_DEBUG_LOG', true);
-        }
-        if (!defined('WP_DEBUG_DISPLAY')) {
-            define('WP_DEBUG_DISPLAY', false);
-        }
-        
         $this->plugin_name = 'mgu-api-integration';
         $this->version = '1.0.0';
         
@@ -104,8 +93,6 @@ class MGU_API {
      */
     private function define_public_hooks() {
         $plugin_public = new MGU_API_Public($this->get_plugin_name(), $this->get_version());
-        
-        error_log('Registering public hooks for MGU API Integration');
         
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
@@ -229,7 +216,6 @@ class MGU_API {
             return;
         }
         
-        error_log('API Response: ' . print_r($response, true));
         wp_send_json_success($response);
     }
 
@@ -237,26 +223,20 @@ class MGU_API {
      * AJAX handler for getting a quote
      */
     public function ajax_get_quote() {
-        error_log('AJAX request received for quote');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for quote request');
             wp_send_json_error('Invalid security token');
             return;
         }
         
         $device_data = isset($_POST['device_data']) ? $_POST['device_data'] : array();
         if (empty($device_data)) {
-            error_log('No device data provided');
             wp_send_json_error('Device data is required');
             return;
         }
 
         // Validate required fields for V2 API
         if (empty($device_data['productId']) || empty($device_data['memoryInstalled'])) {
-            error_log('Missing required fields in device data: ' . print_r($device_data, true));
             wp_send_json_error('Product ID and Memory Installed are required');
             return;
         }
@@ -265,7 +245,6 @@ class MGU_API {
         $purchase_price = 0; // Default value
         if (!empty($device_data['purchasePrice'])) {
             if (!is_numeric($device_data['purchasePrice']) || $device_data['purchasePrice'] <= 0) {
-                error_log('Invalid purchase price: ' . $device_data['purchasePrice']);
                 wp_send_json_error('Purchase price must be a valid positive number if provided');
                 return;
             }
@@ -281,12 +260,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Raw API Response: ' . print_r($response, true));
-        error_log('Response type: ' . gettype($response));
-        if (is_array($response)) {
-            error_log('Response keys: ' . implode(', ', array_keys($response)));
-        }
-        
         wp_send_json_success($response);
     }
 
@@ -294,13 +267,8 @@ class MGU_API {
      * AJAX handler for creating a customer
      */
     public function ajax_create_customer() {
-        error_log('=== Customer Creation Debug ===');
-        error_log('AJAX request received for customer creation');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for customer creation');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -308,7 +276,6 @@ class MGU_API {
         $customer_data = isset($_POST['customer_data']) ? $_POST['customer_data'] : array();
         
         if (empty($customer_data)) {
-            error_log('No customer data provided');
             wp_send_json_error('Customer data is required');
             return;
         }
@@ -322,7 +289,6 @@ class MGU_API {
         $required_fields = array('givenName', 'lastName', 'email', 'mobileNumber', 'address1', 'postCode');
         foreach ($required_fields as $field) {
             if (empty($customer_data[$field])) {
-                error_log("Missing required field: {$field}");
                 wp_send_json_error("Missing required field: {$field}");
                 return;
             }
@@ -347,13 +313,11 @@ class MGU_API {
 
         foreach ($field_lengths as $field => $max_length) {
             if (isset($customer_data[$field]) && strlen($customer_data[$field]) > $max_length) {
-                error_log("Field {$field} exceeds maximum length of {$max_length}");
                 wp_send_json_error("Field {$field} exceeds maximum length of {$max_length}");
                 return;
             }
         }
         
-        error_log('Customer data validated, calling API client');
         $api_client = new MGU_API_Client();
         $response = $api_client->create_customer($customer_data);
         
@@ -363,8 +327,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Customer creation response: ' . print_r($response, true));
-        error_log('=== End Customer Creation Debug ===');
         wp_send_json_success($response);
     }
     
@@ -372,13 +334,8 @@ class MGU_API {
      * AJAX handler for updating a customer
      */
     public function ajax_update_customer() {
-        error_log('=== Customer Update Debug ===');
-        error_log('AJAX request received for customer update');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for customer update');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -386,7 +343,6 @@ class MGU_API {
         $customer_data = isset($_POST['customer_data']) ? $_POST['customer_data'] : array();
         
         if (empty($customer_data)) {
-            error_log('No customer data provided');
             wp_send_json_error('Customer data is required');
             return;
         }
@@ -405,7 +361,6 @@ class MGU_API {
         $required_fields = array('givenName', 'lastName', 'email', 'mobileNumber', 'address1', 'postCode');
         foreach ($required_fields as $field) {
             if (empty($customer_data[$field])) {
-                error_log("Missing required field: {$field}");
                 wp_send_json_error("Missing required field: {$field}");
                 return;
             }
@@ -430,13 +385,11 @@ class MGU_API {
 
         foreach ($field_lengths as $field => $max_length) {
             if (isset($customer_data[$field]) && strlen($customer_data[$field]) > $max_length) {
-                error_log("Field {$field} exceeds maximum length of {$max_length}");
                 wp_send_json_error("Field {$field} exceeds maximum length of {$max_length}");
                 return;
             }
         }
         
-        error_log('Customer data validated, calling API client');
         $api_client = new MGU_API_Client();
         $response = $api_client->update_customer($customer_data);
         
@@ -446,8 +399,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Customer update response: ' . print_r($response, true));
-        error_log('=== End Customer Update Debug ===');
         wp_send_json_success($response);
     }
 
@@ -455,13 +406,8 @@ class MGU_API {
      * AJAX handler for opening a basket
      */
     public function ajax_open_basket() {
-        error_log('=== Open Basket Debug ===');
-        error_log('AJAX request received for opening basket');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for opening basket');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -471,7 +417,6 @@ class MGU_API {
         $include_loss_cover = isset($_POST['include_loss_cover']) ? sanitize_text_field($_POST['include_loss_cover']) : '';
         
         if (!$customer_id || !$premium_period || !$include_loss_cover) {
-            error_log('Missing required fields for opening basket');
             wp_send_json_error('Missing required fields');
             return;
         }
@@ -490,7 +435,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Opening basket for customer: ' . $customer_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->open_basket($customer_id, $premium_period, $include_loss_cover);
         
@@ -500,8 +444,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Basket opened successfully: ' . print_r($response, true));
-        error_log('=== End Open Basket Debug ===');
         wp_send_json_success($response);
     }
 
@@ -509,13 +451,8 @@ class MGU_API {
      * AJAX handler for adding a gadget to the basket
      */
     public function ajax_add_gadget() {
-        error_log('=== Add Gadget Debug ===');
-        error_log('AJAX request received for adding gadget');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for adding gadget');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -524,7 +461,6 @@ class MGU_API {
         $gadget_data = isset($_POST['gadget_data']) ? $_POST['gadget_data'] : array();
         
         if (!$basket_id || empty($gadget_data)) {
-            error_log('Missing required fields for adding gadget');
             wp_send_json_error('Missing required fields');
             return;
         }
@@ -539,7 +475,6 @@ class MGU_API {
             $gadget_data['purchasePrice'] = floatval($gadget_data['purchasePrice']);
         }
         
-        error_log('Adding gadget to basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         
         // Extract V2 API parameters from gadget_data
@@ -549,8 +484,6 @@ class MGU_API {
         $installed_memory = isset($gadget_data['installedMemory']) ? sanitize_text_field($gadget_data['installedMemory']) : '';
         $purchase_price = isset($gadget_data['purchasePrice']) ? floatval($gadget_data['purchasePrice']) : 0;
         
-        error_log('V2 API parameters: productId=' . $product_id . ', dateOfPurchase=' . $date_of_purchase . ', serialNumber=' . $serial_number . ', installedMemory=' . $installed_memory . ', purchasePrice=' . $purchase_price);
-        
         $response = $api_client->insure_gadget($basket_id, $product_id, $date_of_purchase, $serial_number, $installed_memory, $purchase_price);
         
         if (is_wp_error($response)) {
@@ -559,8 +492,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Gadget added successfully: ' . print_r($response, true));
-        error_log('=== End Add Gadget Debug ===');
         wp_send_json_success($response);
     }
 
@@ -568,13 +499,8 @@ class MGU_API {
      * AJAX handler for confirming the basket
      */
     public function ajax_confirm_basket() {
-        error_log('=== Confirm Basket Debug ===');
-        error_log('AJAX request received for confirming basket');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for confirming basket');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -582,12 +508,10 @@ class MGU_API {
         $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
         
         if (!$basket_id) {
-            error_log('Missing basket ID for confirmation');
             wp_send_json_error('Missing basket ID');
             return;
         }
         
-        error_log('Confirming basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->confirm_basket($basket_id);
         
@@ -597,12 +521,8 @@ class MGU_API {
             return;
         }
         
-        error_log('Basket confirmed successfully: ' . print_r($response, true));
-        
         // If payment is required, automatically process it with stored payment data
         if (isset($response['Outcome']) && $response['Outcome'] === 'PaymentRequired') {
-            error_log('Payment required, processing with stored payment data');
-            
             // Get customer ID from basket (we need to find a way to get this)
             // For now, we'll need to pass the customer ID in the request
             $customer_id = isset($_POST['customer_id']) ? intval($_POST['customer_id']) : 0;
@@ -612,8 +532,6 @@ class MGU_API {
                 $payment_data = get_transient('mgu_payment_data_' . $customer_id);
                 
                 if ($payment_data) {
-                    error_log('Found stored payment data for customer: ' . $customer_id);
-                    
                     // Process direct debit payment
                     $payment_response = $api_client->pay_by_direct_debit($basket_id, $payment_data);
                     
@@ -621,22 +539,16 @@ class MGU_API {
                         error_log('Payment processing error: ' . $payment_response->get_error_message());
                         // Don't fail the entire process, just log the error
                     } else {
-                        error_log('Payment processed successfully: ' . print_r($payment_response, true));
                         // Update the response with payment result
                         $response = $payment_response;
                         
                         // Clean up stored payment data
                         delete_transient('mgu_payment_data_' . $customer_id);
                     }
-                } else {
-                    error_log('No stored payment data found for customer: ' . $customer_id);
                 }
-            } else {
-                error_log('No customer ID provided for payment processing');
             }
         }
         
-        error_log('=== End Confirm Basket Debug ===');
         wp_send_json_success($response);
     }
 
@@ -644,13 +556,8 @@ class MGU_API {
      * AJAX handler for paying by direct debit
      */
     public function ajax_pay_by_direct_debit() {
-        error_log('=== Pay By Direct Debit Debug ===');
-        error_log('AJAX request received for direct debit payment');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for direct debit payment');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -659,7 +566,6 @@ class MGU_API {
         $direct_debit = isset($_POST['direct_debit']) ? $_POST['direct_debit'] : array();
         
         if (!$basket_id || empty($direct_debit)) {
-            error_log('Missing required fields for direct debit payment');
             wp_send_json_error('Missing required fields');
             return;
         }
@@ -668,13 +574,11 @@ class MGU_API {
         $required_fields = ['NameOnAccount', 'AccountNumber', 'SortCode'];
         foreach ($required_fields as $field) {
             if (empty($direct_debit[$field])) {
-                error_log('Missing required direct debit field: ' . $field);
                 wp_send_json_error('Missing required field: ' . $field);
                 return;
             }
         }
         
-        error_log('Processing direct debit payment for basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->pay_by_direct_debit($basket_id, $direct_debit);
         
@@ -684,8 +588,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Direct debit payment processed successfully: ' . print_r($response, true));
-        error_log('=== End Pay By Direct Debit Debug ===');
         wp_send_json_success($response);
     }
 
@@ -1157,7 +1059,7 @@ class MGU_API {
         $environment = $this->get_current_environment();
         
         if ($environment === 'production') {
-            return 'https://api.mygadgetumbrella.com/auth';
+            return 'https://join.mygadgetumbrella.com/jauth';
         }
         
         return 'https://sandbox.api.mygadgetumbrella.com/sbauth';
@@ -1167,13 +1069,8 @@ class MGU_API {
      * AJAX handler for adding loss cover to basket
      */
     public function ajax_add_loss_cover() {
-        error_log('=== Add Loss Cover Debug ===');
-        error_log('AJAX request received for adding loss cover');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for adding loss cover');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -1181,12 +1078,10 @@ class MGU_API {
         $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
         
         if (!$basket_id) {
-            error_log('Missing basket ID for adding loss cover');
             wp_send_json_error('Missing basket ID');
             return;
         }
         
-        error_log('Adding loss cover to basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->add_loss_cover($basket_id);
         
@@ -1196,8 +1091,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Loss cover added successfully: ' . print_r($response, true));
-        error_log('=== End Add Loss Cover Debug ===');
         wp_send_json_success($response);
     }
     
@@ -1205,13 +1098,8 @@ class MGU_API {
      * AJAX handler for removing loss cover from basket
      */
     public function ajax_remove_loss_cover() {
-        error_log('=== Remove Loss Cover Debug ===');
-        error_log('AJAX request received for removing loss cover');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for removing loss cover');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -1219,12 +1107,10 @@ class MGU_API {
         $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
         
         if (!$basket_id) {
-            error_log('Missing basket ID for removing loss cover');
             wp_send_json_error('Missing basket ID');
             return;
         }
         
-        error_log('Removing loss cover from basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->remove_loss_cover($basket_id);
         
@@ -1234,8 +1120,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Loss cover removed successfully: ' . print_r($response, true));
-        error_log('=== End Remove Loss Cover Debug ===');
         wp_send_json_success($response);
     }
     
@@ -1243,13 +1127,8 @@ class MGU_API {
      * AJAX handler for getting basket data
      */
     public function ajax_get_basket() {
-        error_log('=== Get Basket Debug ===');
-        error_log('AJAX request received for getting basket');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for getting basket');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -1257,12 +1136,10 @@ class MGU_API {
         $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
         
         if (!$basket_id) {
-            error_log('Missing basket ID for getting basket');
             wp_send_json_error('Missing basket ID');
             return;
         }
         
-        error_log('Getting basket data for basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->get_basket($basket_id);
         
@@ -1272,8 +1149,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Basket data retrieved successfully: ' . print_r($response, true));
-        error_log('=== End Get Basket Debug ===');
         wp_send_json_success($response);
     }
     
@@ -1281,13 +1156,8 @@ class MGU_API {
      * AJAX handler for canceling basket
      */
     public function ajax_cancel_basket() {
-        error_log('=== Cancel Basket Debug ===');
-        error_log('AJAX request received for canceling basket');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for canceling basket');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -1295,12 +1165,10 @@ class MGU_API {
         $basket_id = isset($_POST['basket_id']) ? intval($_POST['basket_id']) : 0;
         
         if (!$basket_id) {
-            error_log('Missing basket ID for canceling basket');
             wp_send_json_error('Missing basket ID');
             return;
         }
         
-        error_log('Canceling basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->cancel_basket($basket_id);
         
@@ -1310,8 +1178,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Basket canceled successfully: ' . print_r($response, true));
-        error_log('=== End Cancel Basket Debug ===');
         wp_send_json_success($response);
     }
     
@@ -1319,13 +1185,8 @@ class MGU_API {
      * AJAX handler for removing policy from basket
      */
     public function ajax_remove_policy() {
-        error_log('=== Remove Policy Debug ===');
-        error_log('AJAX request received for removing policy');
-        error_log('POST data: ' . print_r($_POST, true));
-        
         // Verify nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mgu_api_nonce')) {
-            error_log('Nonce verification failed for removing policy');
             wp_send_json_error('Invalid security token');
             return;
         }
@@ -1334,12 +1195,10 @@ class MGU_API {
         $policy_id = isset($_POST['policy_id']) ? intval($_POST['policy_id']) : 0;
         
         if (!$basket_id || !$policy_id) {
-            error_log('Missing basket ID or policy ID for removing policy');
             wp_send_json_error('Missing required fields');
             return;
         }
         
-        error_log('Removing policy: ' . $policy_id . ' from basket: ' . $basket_id);
         $api_client = new MGU_API_Client();
         $response = $api_client->remove_policy($basket_id, $policy_id);
         
@@ -1349,8 +1208,6 @@ class MGU_API {
             return;
         }
         
-        error_log('Policy removed successfully: ' . print_r($response, true));
-        error_log('=== End Remove Policy Debug ===');
         wp_send_json_success($response);
     }
 } 

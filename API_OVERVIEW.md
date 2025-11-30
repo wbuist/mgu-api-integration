@@ -28,7 +28,7 @@ The API uses **OAuth 2.0** with `client_credentials` grant type for secure authe
 
 ### Authentication Endpoints:
 - **Sandbox:** `https://sandbox.api.mygadgetumbrella.com/sbauth/oauth/token`
-- **Production:** `https://api.mygadgetumbrella.com/auth/oauth/token` (when available)
+- **Production:** `https://join.mygadgetumbrella.com/jauth/oauth/token`
 
 ## 5. Environment Configuration
 The plugin supports both sandbox and production environments:
@@ -38,8 +38,8 @@ The plugin supports both sandbox and production environments:
   - Auth URL: `https://sandbox.api.mygadgetumbrella.com/sbauth`
   
 - **Production Environment:** For live customer transactions
-  - Base URL: `https://api.mygadgetumbrella.com/api` (when available)
-  - Auth URL: `https://api.mygadgetumbrella.com/auth` (when available)
+  - Base URL: `https://api.mygadgetumbrella.com/api`
+  - Auth URL: `https://join.mygadgetumbrella.com/jauth`
 
 Each environment requires separate Client ID and Client Secret credentials for security.
 
