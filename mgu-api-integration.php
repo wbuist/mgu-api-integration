@@ -3,7 +3,7 @@
  * Plugin Name: MGU API Integration
  * Plugin URI: https://github.com/wbuist/MGUAPI
  * Description: A WordPress plugin for integrating with the MGU API system.
- * Version: 1.0.5
+ * Version: 1.0.4
  * Author: William Buist
  * Author URI: https://github.com/wbuist
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('WPINC')) {
 }
 
 // Define plugin constants
-define('MGU_API_VERSION', '1.0.5');
+define('MGU_API_VERSION', '1.0.4');
 define('MGU_API_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MGU_API_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MGU_API_PLUGIN_BASENAME', plugin_basename(__FILE__));
