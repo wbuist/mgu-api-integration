@@ -1,7 +1,4 @@
 jQuery(document).ready(function($) {
-    console.log('Script loaded');
-    console.log('AJAX URL:', mgu_api.ajax_url);
-    console.log('Nonce:', mgu_api.nonce);
 
     // Global variables to store state
     window.currentGadgetType = '';
@@ -91,8 +88,6 @@ jQuery(document).ready(function($) {
 
         // Store the current gadget type globally
         window.currentGadgetType = gadgetType;
-        console.log('Selected gadget type:', gadgetType);
-
         // Show manufacturer step
         $('#step-manufacturer').show();
         setActiveStep('step-manufacturer');
@@ -102,8 +97,6 @@ jQuery(document).ready(function($) {
             gadget_type: gadgetType,
             nonce: mgu_api.nonce
         };
-        
-        console.log('Sending manufacturer request:', requestData);
         
         // Clear any existing error messages
         $('#step-manufacturer .mgu-api-step-result').removeClass('error success').empty();
@@ -118,9 +111,6 @@ jQuery(document).ready(function($) {
             data: requestData,
             success: function(response) {
                 hideLoading('step-manufacturer');
-                console.log('Manufacturers response:', response);
-                console.log('Response success:', response.success);
-                console.log('Response data:', response.data);
                 
                 if (response.success && response.data && response.data.value) {
                     const manufacturers = response.data.value || [];
@@ -141,19 +131,16 @@ jQuery(document).ready(function($) {
                         
                         // Clear error message on success
                         $('#step-manufacturer .mgu-api-step-result').removeClass('error success').empty();
-                        console.log('Successfully loaded ' + manufacturers.length + ' manufacturers');
                     } else {
                         // No manufacturers returned - clear dropdown but don't show error (this is a valid empty result)
                         const select = $('#manufacturer-select');
                         select.empty().append('<option value="">Select a manufacturer...</option>');
                         
-                        console.log('No manufacturers available for gadget type:', gadgetType);
                         // Clear any existing messages - empty results are not errors
                         $('#step-manufacturer .mgu-api-step-result').removeClass('error success').empty();
                     }
                 } else {
                     // Response failed - show error but allow retry
-                    console.log('Manufacturers request failed - response:', response);
                     $('#step-manufacturer .mgu-api-step-result').removeClass('success').addClass('error')
                         .html('Failed to load manufacturers. <a href="#" class="retry-manufacturers">Click to retry</a>');
                     
@@ -191,12 +178,6 @@ jQuery(document).ready(function($) {
         $('#step-model').show();
         setActiveStep('step-model');
         
-        console.log('Loading models with:', {
-            manufacturer_id: manufacturerId,
-            gadget_type: gadgetType,
-            nonce: mgu_api.nonce
-        });
-        
         // Clear any existing error messages
         $('#step-model .mgu-api-step-result').removeClass('error success').empty();
         
@@ -215,9 +196,6 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 hideLoading('step-model');
-                console.log('Models response:', response);
-                console.log('Models response success:', response.success);
-                console.log('Models response data:', response.data);
                 
                 const select = $('#model-select');
                 select.empty().append('<option value="">Select a model...</option>');
@@ -251,25 +229,15 @@ jQuery(document).ready(function($) {
                     
                     // Clear error message on success
                     $('#step-model .mgu-api-step-result').removeClass('error success').empty();
-                    console.log('Successfully loaded ' + models.length + ' models');
-                    console.log('DEBUG - Stored models with memoryOptions:', loadedModels.map(m => ({ 
-                        id: m.id, 
-                        name: m.productName || m.name || m.model,
-                        hasMemoryOptions: !!(m.memoryOptions && m.memoryOptions.length > 0),
-                        memoryOptionsCount: m.memoryOptions ? m.memoryOptions.length : 0,
-                        optionType: m.optionType
-                    })));
                 } else {
                     // No models returned - clear dropdown but don't show error (this is a valid empty result)
                     loadedModels = []; // Clear stored models
-                    console.log('No models available for this manufacturer and gadget type');
                     // Clear any existing messages - empty results are not errors
                     $('#step-model .mgu-api-step-result').removeClass('error success').empty();
                 }
                 
                 if (!response.success || !models) {
                     // Only show error if we didn't get models
-                    console.log('Models failed - response:', response);
                     loadedModels = []; // Clear stored models on error
                     $('#step-model .mgu-api-step-result').removeClass('success').addClass('error')
                         .text('Failed to load models: ' + (response.data || 'Unknown error'));
@@ -335,27 +303,18 @@ jQuery(document).ready(function($) {
             premiumPeriod: $('input[name="premium-period"]:checked').val()
         };
 
-        console.log('Submitting device data:', deviceData);
-        console.log('Selected model object:', window.selectedModel);
-        console.log('Model select value:', $('#model-select').val());
-
         // Add gadget to basket and show quote summary
-        console.log('DEBUG - Current basket ID:', currentBasketId);
         if (currentBasketId) {
             // We already have a basket, just add the gadget to it
-            console.log('DEBUG - Adding additional gadget to existing basket:', currentBasketId);
             addGadgetToBasket(deviceData);
         } else {
             // First gadget, create customer and basket
-            console.log('DEBUG - Adding first gadget, creating customer and basket');
             handleAddFirstGadget(deviceData);
         }
     });
 
     // Function to get quote
     function getQuote(deviceData) {
-        console.log('Sending quote request with data:', deviceData);
-        
         // Clear any previous error messages
         $('.mgu-api-step-result').removeClass('error success').empty();
         
@@ -368,20 +327,16 @@ jQuery(document).ready(function($) {
                 nonce: mgu_api.nonce
             },
             success: function(response) {
-                console.log('Quote response received:', response);
                 if (response.success && response.data) {
-                    console.log('Quote data:', response.data);
                     displayQuoteV2(response.data);
                     $('#step-quote').show();
                     // Clear any error messages
                     $('.mgu-api-step-result').removeClass('error success').empty();
                 } else {
-                    console.error('Quote error:', response.data);
                     showError('step-device', 'Failed to get quote: ' + (response.data || 'Unknown error'));
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Quote request failed:', {xhr, status, error});
                 showError('step-device', 'Failed to get quote');
             }
         });
@@ -389,10 +344,7 @@ jQuery(document).ready(function($) {
 
     // Function to display quote
     function displayQuoteV2(quoteData) {
-        console.log('Displaying V2 quote data:', quoteData);
-        
         if (!quoteData) {
-            console.error('Invalid quote data received');
             return;
         }
 
@@ -417,10 +369,7 @@ jQuery(document).ready(function($) {
     }
 
     function displayQuote(quoteData) {
-        console.log('Displaying quote data:', quoteData);
-        
         if (!quoteData || !quoteData.value || !Array.isArray(quoteData.value)) {
-            console.error('Invalid quote data received');
             return;
         }
 
@@ -472,9 +421,6 @@ jQuery(document).ready(function($) {
             $('.mgu-api-quote-option').removeClass('selected');
             $(this).closest('.mgu-api-quote-option').addClass('selected');
             // V2 API - button is always available after quote is displayed
-            
-            console.log('Selected quote option:', window.selectedQuoteOption);
-            console.log('Current quote ID:', window.currentQuoteId);
         }
     });
 
@@ -482,7 +428,6 @@ jQuery(document).ready(function($) {
     $('#buy-policy').on('click', function(e) {
         e.preventDefault();
         // For V2 API, we have a single quote, no need to select from options
-        console.log('Buy Policy clicked - moving to policy creation');
         $('#step-policy').show();
         setActiveStep('step-policy');
     });
@@ -490,11 +435,8 @@ jQuery(document).ready(function($) {
     // Handle policy form submission
     $('#policy-form').on('submit', function(e) {
         e.preventDefault();
-        console.log('Form submitted - Starting policy creation process');
-        console.log('Current basket ID:', currentBasketId);
 
         if (!currentBasketId) {
-            console.error('No basket ID available');
             showError('step-policy', 'No basket available. Please start over.');
             return;
         }
@@ -522,26 +464,19 @@ jQuery(document).ready(function($) {
 
         // Validate required fields
         if (!customerData.givenName || !customerData.lastName || !customerData.email || !customerData.mobileNumber) {
-            console.error('Missing required customer fields');
             alert('Please fill in all required fields (First Name, Last Name, Email, Phone)');
             return;
         }
         
         if (!customerData.address1 || !customerData.postCode) {
-            console.error('Missing required address fields');
             alert('Please fill in Address Line 1 and Postcode');
             return;
         }
-
-        console.log('DEBUG - Customer data being sent:', JSON.stringify(customerData, null, 2));
-        console.log('DEBUG - Using existing basket ID:', currentBasketId);
 
         // Show loading state on policy step
         showLoading('step-policy');
         
         // First update customer data, then confirm basket
-        console.log('DEBUG - Updating customer data');
-        
         // Ensure we have a customer ID - try currentCustomerId, fall back to lastBasketData
         let customerIdToUpdate = currentCustomerId;
         if (!customerIdToUpdate && lastBasketData && lastBasketData.customerId) {
@@ -550,15 +485,12 @@ jQuery(document).ready(function($) {
         }
         
         if (!customerIdToUpdate) {
-            console.error('DEBUG - No customer ID available for update');
             showError('step-policy', 'Unable to update customer information. Please try again.');
             return;
         }
         
         // Add customer ID to customer data - ensure it's an integer
         customerData.id = parseInt(customerIdToUpdate, 10);
-        
-        console.log('DEBUG - Updating customer with ID:', customerData.id);
         
         $.ajax({
             url: mgu_api.ajax_url,
@@ -569,10 +501,8 @@ jQuery(document).ready(function($) {
                 nonce: mgu_api.nonce
             },
             success: function(updateResponse) {
-                console.log('DEBUG - Customer updated:', updateResponse);
                 if (updateResponse.success) {
                     // Now confirm the basket
-                    console.log('DEBUG - Confirming basket');
                     $.ajax({
                         url: mgu_api.ajax_url,
                         type: 'POST',
@@ -583,15 +513,12 @@ jQuery(document).ready(function($) {
                             nonce: mgu_api.nonce
                         },
                         success: function(confirmResponse) {
-                            console.log('DEBUG - Basket confirmed:', confirmResponse);
                             if (confirmResponse.success) {
                                 // Check if payment is required
                                 const outcome = confirmResponse.data.Outcome;
-                                console.log('DEBUG - Confirm basket outcome:', outcome);
                                 
                                 if (outcome === 'PaymentRequired') {
                                     // Payment required - process direct debit
-                                    console.log('DEBUG - Payment required, processing direct debit');
                                     $.ajax({
                                         url: mgu_api.ajax_url,
                                         type: 'POST',
@@ -606,7 +533,6 @@ jQuery(document).ready(function($) {
                                             nonce: mgu_api.nonce
                                         },
                                         success: function(paymentResponse) {
-                                            console.log('DEBUG - Payment processed:', paymentResponse);
                                             if (paymentResponse.success) {
                                                 showSuccess('step-policy', 'Policy created and payment processed successfully!');
                                             } else {
@@ -614,13 +540,11 @@ jQuery(document).ready(function($) {
                                             }
                                         },
                                         error: function(xhr, status, error) {
-                                            console.error('DEBUG - Payment processing error:', {xhr, status, error});
                                             showError('step-policy', 'Error processing payment: ' + error);
                                         }
                                     });
                                 } else if (outcome === 'Confirmed') {
                                     // No payment required - basket is already confirmed
-                                    console.log('DEBUG - No payment required, basket confirmed');
                                     showSuccess('step-policy', 'Policy created successfully!');
                                 } else {
                                     showError('step-policy', 'Unexpected basket status: ' + outcome);
@@ -630,7 +554,6 @@ jQuery(document).ready(function($) {
                             }
                         },
                         error: function(xhr, status, error) {
-                            console.error('DEBUG - Basket confirmation error:', {xhr, status, error});
                             showError('step-policy', 'Error confirming basket: ' + error);
                         }
                     });
@@ -639,7 +562,6 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('DEBUG - Customer update error:', {xhr, status, error});
                 showError('step-policy', 'Error updating customer: ' + error);
             }
         });
@@ -701,33 +623,22 @@ jQuery(document).ready(function($) {
     // Function to populate memory options based on selected model
     function populateMemoryOptions() {
         if (!selectedModelData) {
-            console.log('DEBUG - populateMemoryOptions: No selectedModelData');
             return;
         }
         
-        console.log('DEBUG - populateMemoryOptions: Looking for model ID:', selectedModelData.id);
-        console.log('DEBUG - populateMemoryOptions: Stored models count:', loadedModels.length);
-        
-        // First try to use stored models (no API call needed)
-        let selectedModel = null;
-        if (loadedModels && loadedModels.length > 0) {
-            // Find the selected model - try both string and number comparison
-            selectedModel = loadedModels.find(model => {
-                const modelId = parseInt(model.id, 10);
-                const selectedId = parseInt(selectedModelData.id, 10);
-                return modelId === selectedId || model.id == selectedModelData.id;
-            });
-            
-            if (selectedModel) {
-                console.log('DEBUG - populateMemoryOptions: Found model in stored data:', selectedModel);
-            } else {
-                console.warn('DEBUG - populateMemoryOptions: Model not found in stored data, will fetch from API');
+            // First try to use stored models (no API call needed)
+            let selectedModel = null;
+            if (loadedModels && loadedModels.length > 0) {
+                // Find the selected model - try both string and number comparison
+                selectedModel = loadedModels.find(model => {
+                    const modelId = parseInt(model.id, 10);
+                    const selectedId = parseInt(selectedModelData.id, 10);
+                    return modelId === selectedId || model.id == selectedModelData.id;
+                });
             }
-        }
-        
-        // If not found in stored data, fetch from API
-        if (!selectedModel) {
-            console.log('DEBUG - populateMemoryOptions: Fetching models from API for selected model ID:', selectedModelData.id);
+            
+            // If not found in stored data, fetch from API
+            if (!selectedModel) {
             
             $.ajax({
                 url: mgu_api.ajax_url,
@@ -739,25 +650,20 @@ jQuery(document).ready(function($) {
                     nonce: mgu_api.nonce
                 },
                 success: function(response) {
-                    console.log('DEBUG - populateMemoryOptions: Full API response:', response);
-                    
                     // Check different possible response structures
                     let models = null;
                     if (response.success && response.data) {
                         // Try response.data.value first (current structure)
                         if (response.data.value && Array.isArray(response.data.value)) {
                             models = response.data.value;
-                            console.log('DEBUG - populateMemoryOptions: Found models in response.data.value:', models.length);
                         }
                         // Try response.data directly (alternative structure)
                         else if (Array.isArray(response.data)) {
                             models = response.data;
-                            console.log('DEBUG - populateMemoryOptions: Found models in response.data:', models.length);
                         }
                     }
                     
                     if (!models || models.length === 0) {
-                        console.error('DEBUG - populateMemoryOptions: No models found in response');
                         $('#memory-options-container').hide();
                         return;
                     }
@@ -775,14 +681,10 @@ jQuery(document).ready(function($) {
                     if (selectedModel) {
                         processMemoryOptions(selectedModel);
                     } else {
-                        console.error('DEBUG - populateMemoryOptions: Selected model not found in models array');
-                        console.log('DEBUG - populateMemoryOptions: Looking for ID:', selectedModelData.id);
-                        console.log('DEBUG - populateMemoryOptions: Available model IDs:', models.map(m => ({ id: m.id, name: m.productName || m.name || m.model })));
                         $('#memory-options-container').hide();
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('DEBUG - populateMemoryOptions: AJAX error:', {xhr, status, error});
                     $('#memory-options-container').hide();
                 }
             });
@@ -793,22 +695,13 @@ jQuery(document).ready(function($) {
         
         // Helper function to process memory options
         function processMemoryOptions(model) {
-            console.log('DEBUG - populateMemoryOptions: Processing model:', model);
-            console.log('DEBUG - populateMemoryOptions: memoryOptions:', model.memoryOptions);
-            console.log('DEBUG - populateMemoryOptions: optionType:', model.optionType);
-            console.log('DEBUG - populateMemoryOptions: Full model data:', model);
-            
             // Check if container exists
             const $memoryContainer = $('#memory-options-container');
             if ($memoryContainer.length === 0) {
-                console.error('DEBUG - populateMemoryOptions: Memory container element not found!');
                 return;
             }
             
             if (model.memoryOptions && Array.isArray(model.memoryOptions) && model.memoryOptions.length > 0) {
-                console.log('DEBUG - populateMemoryOptions: Found', model.memoryOptions.length, 'memory options');
-                console.log('DEBUG - populateMemoryOptions: Memory option values:', model.memoryOptions);
-                console.log('DEBUG - populateMemoryOptions: Memory option types:', model.memoryOptions.map(m => typeof m));
                 
                 // Clear existing options FIRST
                 $('#memory-radio-buttons').empty();
@@ -821,11 +714,7 @@ jQuery(document).ready(function($) {
                 
                 // Verify it's actually visible
                 const isVisible = $memoryContainer.is(':visible');
-                console.log('DEBUG - populateMemoryOptions: Memory container visibility:', isVisible);
-                console.log('DEBUG - populateMemoryOptions: Memory container display style:', $memoryContainer.css('display'));
-                
                 if (!isVisible) {
-                    console.error('DEBUG - populateMemoryOptions: Memory container is still not visible after show()!');
                     // Force it visible
                     $memoryContainer.removeAttr('style').css('display', 'block');
                 }
@@ -834,7 +723,6 @@ jQuery(document).ready(function($) {
                 model.memoryOptions.forEach(function(memoryOption) {
                     // Convert memoryOption to string (it might be a number or object)
                     const memoryOptionStr = String(memoryOption);
-                    console.log('DEBUG - populateMemoryOptions: Processing memory option:', memoryOption, 'as string:', memoryOptionStr);
                     
                     // Format the display value with GB/TB suffix
                     const formattedValue = formatMemoryValue(memoryOptionStr);
@@ -875,9 +763,6 @@ jQuery(document).ready(function($) {
                 }
             } else {
                 // Hide memory options if none available
-                console.warn('DEBUG - populateMemoryOptions: No memory options available for selected model');
-                console.warn('DEBUG - populateMemoryOptions: memoryOptions value:', model.memoryOptions);
-                console.warn('DEBUG - populateMemoryOptions: optionType:', model.optionType);
                 $('#memory-options-container').hide();
             }
         }
@@ -886,13 +771,10 @@ jQuery(document).ready(function($) {
     // Function to populate premium period options with quote data
     function populatePremiumPeriodOptions(productId, memoryInstalled) {
         if (!productId || !memoryInstalled) {
-            console.warn('populatePremiumPeriodOptions called without productId or memoryInstalled', { productId, memoryInstalled });
             return;
         }
         // Get current form data
         const purchasePrice = parseFloat($('#device-purchase-price').val()) || 0;
-        
-        console.log('DEBUG - Populating premium period options for product:', productId, 'memory:', memoryInstalled, 'price:', purchasePrice);
         
         // Show loading state
         showLoading('step-device');
@@ -913,10 +795,8 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 hideLoading('step-device');
-                console.log('DEBUG - Quote response for premium period options:', response);
                 if (response.success && response.data) {
                     const quoteData = response.data;
-                    console.log('DEBUG - Quote data:', quoteData);
                     
                     // Store quote data globally for policy creation
                     window.currentQuoteData = quoteData;
@@ -928,21 +808,16 @@ jQuery(document).ready(function($) {
                     window.currentQuoteData = window.currentQuoteData || {};
                     window.currentQuoteData.monthlyPremium = quoteData.monthlyPremium || 0;
                     window.currentQuoteData.annualPremium = quoteData.annualPremium || 0;
-                } else {
-                    console.error('DEBUG - Quote request failed:', response);
                 }
             },
             error: function(xhr, status, error) {
                 hideLoading('step-device');
-                console.error('Error getting quote for premium period options:', {xhr, status, error});
             }
         });
     }
     
     // Function to handle adding the first gadget to basket
     function handleAddFirstGadget(deviceData) {
-        console.log('DEBUG - Adding first gadget to basket:', deviceData);
-        
         // Show loading state
         showLoading('step-device');
         
@@ -975,7 +850,6 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success && response.data && response.data.value) {
                     const customerId = response.data.value;
-                    console.log('DEBUG - Customer created/found with ID:', customerId);
                     currentCustomerId = customerId;
                     
                     // Open basket
@@ -1007,7 +881,6 @@ jQuery(document).ready(function($) {
             success: function(basketResponse) {
                 if (basketResponse.success && basketResponse.data && basketResponse.data.value) {
                     currentBasketId = basketResponse.data.value;
-                    console.log('DEBUG - Basket opened with ID:', currentBasketId);
                     
                     // Add gadget to basket
                     addGadgetToBasket(deviceData);
@@ -1043,8 +916,6 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 hideLoading('step-device');
                 if (response.success) {
-                    console.log('DEBUG - Gadget added to basket successfully');
-                    
                     // Store gadget data for display
                     basketGadgets.push({
                         productId: deviceData.productId,
@@ -1079,14 +950,11 @@ jQuery(document).ready(function($) {
     
     // Function to display quote summary
     function displayQuoteSummary() {
-        console.log('DEBUG - Displaying quote summary for gadgets:', basketGadgets);
-        
         // Clear gadget list - it will be populated by displayBasketPremiums
         $('#gadget-list').html('<h4>Gadgets in your policy:</h4>');
         
         // Always enable loss cover checkbox - consumers can toggle freely
         $('#policy-loss-cover').prop('disabled', false);
-        console.log('DEBUG - Loss cover checkbox always enabled, disabled state:', $('#policy-loss-cover').prop('disabled'));
         $('#policy-loss-cover-info').html(`
             <div class="mgu-help-text-small">
                 Loss cover is not available for Laptops.
@@ -1113,7 +981,6 @@ jQuery(document).ready(function($) {
     // Function to refresh quotes for all gadgets in the basket
     function refreshQuotesForAllGadgets() {
         if (!currentBasketId) {
-            console.error('DEBUG - No basket ID available for refreshing quotes');
             getBasketData();
             return;
         }
@@ -1130,7 +997,6 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success && response.data && response.data.policies) {
                     const policies = response.data.policies;
-                    console.log('DEBUG - Refreshing quotes for', policies.length, 'policies');
                     
                     // Fetch fresh quotes for each policy
                     let quotesFetched = 0;
@@ -1163,18 +1029,15 @@ jQuery(document).ready(function($) {
                                             lossMonthly: Number(freshQuoteData.lossCoverMonthlyPremium || 0),
                                             lossAnnual: Number(freshQuoteData.lossCoverAnnualPremium || 0)
                                         };
-                                        console.log('DEBUG - Refreshed quote for policy ID:', policy.id, quoteDataByPolicyId[policy.id]);
                                     }
                                     
                                     quotesFetched++;
                                     if (quotesFetched === totalPolicies) {
                                         // All quotes fetched, refresh display
-                                        console.log('DEBUG - All quotes refreshed, updating display');
                                         displayBasketPremiums(response.data);
                                     }
                                 },
                                 error: function(xhr, status, error) {
-                                    console.error('DEBUG - Error refreshing quote for policy:', policy.id, error);
                                     quotesFetched++;
                                     if (quotesFetched === totalPolicies) {
                                         displayBasketPremiums(response.data);
@@ -1193,7 +1056,6 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('DEBUG - Error getting basket data for quote refresh:', error);
                 getBasketData();
             }
         });
@@ -1202,7 +1064,6 @@ jQuery(document).ready(function($) {
     // Function to get basket data and display premiums
     function getBasketData() {
         if (!currentBasketId) {
-            console.error('DEBUG - No basket ID available for getting basket data');
             return;
         }
         
@@ -1216,16 +1077,13 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success && response.data) {
-                    console.log('DEBUG - Basket data received:', response.data);
                     lastBasketData = response.data;
                     displayBasketPremiums(response.data);
                 } else {
-                    console.error('DEBUG - Failed to get basket data:', response);
                     displayBasketPremiums(null);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('DEBUG - Error getting basket data:', error);
                 displayBasketPremiums(null);
             }
         });
@@ -1234,7 +1092,6 @@ jQuery(document).ready(function($) {
     // Function to get basket data and store quote data by policy ID
     function getBasketDataWithQuoteStorage(deviceData) {
         if (!currentBasketId) {
-            console.error('DEBUG - No basket ID available for getting basket data');
             return;
         }
         
@@ -1248,7 +1105,6 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success && response.data) {
-                    console.log('DEBUG - Basket data received for quote storage:', response.data);
                     lastBasketData = response.data;
                     
                     // Find the newly added policy (last in array)
@@ -1258,13 +1114,6 @@ jQuery(document).ready(function($) {
                         
                         if (lastPolicy && lastPolicy.id && deviceData) {
                             // Fetch a FRESH quote for this specific gadget
-                            console.log('DEBUG - Fetching fresh quote for newly added gadget:', {
-                                productId: deviceData.productId,
-                                memoryInstalled: deviceData.memoryInstalled,
-                                purchasePrice: deviceData.purchasePrice,
-                                policyId: lastPolicy.id
-                            });
-                            
                             $.ajax({
                                 url: mgu_api.ajax_url,
                                 type: 'POST',
@@ -1282,7 +1131,6 @@ jQuery(document).ready(function($) {
                                 success: function(quoteResponse) {
                                     if (quoteResponse.success && quoteResponse.data) {
                                         const freshQuoteData = quoteResponse.data;
-                                        console.log('DEBUG - Fresh quote received for policy ID:', lastPolicy.id, freshQuoteData);
                                         
                                         // Store the FRESH quote data keyed by policy ID
                                         quoteDataByPolicyId[lastPolicy.id] = {
@@ -1291,18 +1139,15 @@ jQuery(document).ready(function($) {
                                             lossMonthly: Number(freshQuoteData.lossCoverMonthlyPremium || 0),
                                             lossAnnual: Number(freshQuoteData.lossCoverAnnualPremium || 0)
                                         };
-                                        console.log('DEBUG - Stored FRESH quote data for policy ID:', lastPolicy.id, quoteDataByPolicyId[lastPolicy.id]);
                                         
                                         // Refresh the display with the fresh quote data
                                         displayBasketPremiums(response.data);
                                     } else {
-                                        console.error('DEBUG - Failed to get fresh quote:', quoteResponse);
                                         // Fallback: use API premium data from basket
                                         displayBasketPremiums(response.data);
                                     }
                                 },
                                 error: function(xhr, status, error) {
-                                    console.error('DEBUG - Error fetching fresh quote:', error);
                                     // Fallback: use API premium data from basket
                                     displayBasketPremiums(response.data);
                                 }
@@ -1315,12 +1160,10 @@ jQuery(document).ready(function($) {
                         displayBasketPremiums(response.data);
                     }
                 } else {
-                    console.error('DEBUG - Failed to get basket data:', response);
                     displayBasketPremiums(null);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('DEBUG - Error getting basket data:', error);
                 displayBasketPremiums(null);
             }
         });
@@ -1367,18 +1210,6 @@ jQuery(document).ready(function($) {
                     lossPremiumAnnual: policy.lossPremiumAnnual != null ? policy.lossPremiumAnnual : undefined
                 }));
 
-                // Detailed logging of loss cover fields per policy for debugging
-                console.log('DEBUG - Loss cover fields by policy:', individualGadgets.map(p => ({
-                    id: p.id,
-                    make: p.make,
-                    model: p.model,
-                    lossCover: p.lossCover,
-                    lossPremium: p.lossPremium,
-                    lossMonthlyPremium: p.lossMonthlyPremium,
-                    lossPremiumMonthly: p.lossPremiumMonthly,
-                    lossAnnualPremium: p.lossAnnualPremium,
-                    lossPremiumAnnual: p.lossPremiumAnnual
-                })));
             }
             
             // Calculate base premiums using stored quote data by policy ID
@@ -1418,8 +1249,6 @@ jQuery(document).ready(function($) {
                 const storedQuoteData = quoteDataByPolicyId[policyId];
                 return total + (storedQuoteData ? Number(storedQuoteData.lossAnnual || 0) : 0);
             }, 0);
-
-            console.log('DEBUG - Loss cover monthly sum:', individualLossPremiumsMonthly, 'annual sum:', individualLossPremiumsAnnual);
             
             // Check if loss cover is enabled
             const isLossCoverChecked = $('#policy-loss-cover').is(':checked');
@@ -1438,23 +1267,9 @@ jQuery(document).ready(function($) {
                 const discountAmount = totalPremium * discountTotal;
                 totalPremium = totalPremium - discountAmount;
             }
-            
-            console.log('DEBUG - Premium calculation:', {
-                basePremium: basePremium,
-                lossCoverPremium: lossCoverPremium,
-                discountTotal: discountTotal,
-                numberOfPolicies: numberOfPolicies,
-                isLossCoverChecked: isLossCoverChecked,
-                totalPremium: totalPremium,
-                individualGadgets: individualGadgets,
-                basketData: basketData
-            });
         }
         
         // Update loss cover info - checkbox is always enabled
-        console.log('DEBUG - Basket data for loss cover:', basketData);
-        console.log('DEBUG - Loss cover available:', basketData ? basketData.lossCoverAvailable : 'No basket data');
-        
         // Always keep the checkbox enabled - consumers can toggle as needed
         $('#policy-loss-cover').prop('disabled', false);
         
@@ -1463,8 +1278,6 @@ jQuery(document).ready(function($) {
                 Loss cover is not available for Laptops.
             </div>
         `);
-        
-        console.log('DEBUG - Loss cover checkbox always enabled');
         
         // Update the premium display with detailed breakdown
         let premiumHtml = '<div class="mgu-quote-summary-container">';
@@ -1477,16 +1290,6 @@ jQuery(document).ready(function($) {
                     // Match by policy ID instead of index to handle same product added multiple times
                     const policyId = gadget.id;
                     const storedQuoteData = quoteDataByPolicyId[policyId];
-                    
-                    console.log('DEBUG - Displaying gadget:', {
-                        policyId: policyId,
-                        index: index,
-                        hasStoredQuote: !!storedQuoteData,
-                        storedQuote: storedQuoteData,
-                        apiPremium: gadget.premium,
-                        apiGrossPremium: gadget.grossPremium,
-                        apiNetPremium: gadget.netPremium
-                    });
                     
                     // Determine display base premium by selected period
                     // Priority: 1) Stored quote data by policy ID, 2) API premium data, 3) Fallback to 0
@@ -1593,8 +1396,6 @@ jQuery(document).ready(function($) {
         premiumHtml += '</div>';
         
         $('#total-premium-display').html(premiumHtml);
-        
-        console.log('DEBUG - Premiums displayed - Base: £' + basePremium.toFixed(2) + ', Loss Cover: £' + lossCoverPremium.toFixed(2) + ', Discount: £' + discountTotal.toFixed(2) + ', Total: £' + totalPremium.toFixed(2));
     }
     
     // Function to reset device form
@@ -1633,17 +1434,6 @@ jQuery(document).ready(function($) {
             const now = new Date();
             const thirtySixMonthsAgo = new Date(now.getFullYear() - 3, now.getMonth(), now.getDate());
             dateValid = purchaseDateObj >= thirtySixMonthsAgo && purchaseDateObj <= now;
-            
-            // Debug date validation
-            console.log('Date Validation Debug:', {
-                purchaseDate: purchaseDate,
-                purchaseDateObj: purchaseDateObj,
-                now: now,
-                thirtySixMonthsAgo: thirtySixMonthsAgo,
-                isAfter36MonthsAgo: purchaseDateObj >= thirtySixMonthsAgo,
-                isBeforeNow: purchaseDateObj <= now,
-                dateValid: dateValid
-            });
         }
         
         // Premium period now selected at policy level
@@ -1651,16 +1441,6 @@ jQuery(document).ready(function($) {
         
         // Enable button if required fields are filled and date is valid (purchase price is optional)
         const allValid = purchaseDate && memorySelected && premiumPeriodSelected && dateValid;
-        
-        // Debug logging
-        console.log('Quote Button Validation:', {
-            purchaseDate: purchaseDate,
-            memorySelected: memorySelected,
-            premiumPeriodSelected: premiumPeriodSelected,
-            dateValid: dateValid,
-            allValid: allValid,
-            buttonDisabled: !allValid
-        });
         
         $('#get-quote-btn').prop('disabled', !allValid);
         
@@ -1697,14 +1477,9 @@ jQuery(document).ready(function($) {
     });
     
     
-    // Add click handler for quote button debugging
+    // Add click handler for quote button
     $('#get-quote-btn').on('click', function(e) {
-        console.log('Quote button clicked!');
-        console.log('Button disabled state:', $(this).prop('disabled'));
-        console.log('Button classes:', $(this).attr('class'));
-        
         if ($(this).prop('disabled')) {
-            console.log('Button is disabled - preventing form submission');
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -1713,20 +1488,16 @@ jQuery(document).ready(function($) {
     
     // Step 5: Add Another Gadget button
     $('#add-another-gadget').on('click', function() {
-        console.log('DEBUG - Add Another Gadget clicked');
         handleAddAnotherGadget();
     });
     
     // Step 5: Proceed to Policy button
     $('#proceed-to-policy').on('click', function() {
-        console.log('DEBUG - Proceed to Policy clicked');
         handleProceedToPolicy();
     });
     
     // Step 5: Policy Loss Cover checkbox
     $(document).on('change', '#policy-loss-cover', function() {
-        console.log('DEBUG - Policy loss cover toggled:', $(this).is(':checked'));
-        console.log('DEBUG - Checkbox disabled state:', $(this).prop('disabled'));
         handlePolicyLossCoverToggle();
         const $wrap = $(this).closest('.mgu-loss-toggle');
         const $text = $wrap.find('.mgu-loss-text');
@@ -1743,12 +1514,6 @@ jQuery(document).ready(function($) {
         }
     });
     
-    // Also add click handler to ensure clicks are captured
-    $(document).on('click', '#policy-loss-cover', function() {
-        console.log('DEBUG - Policy loss cover clicked');
-        console.log('DEBUG - Checkbox checked state:', $(this).is(':checked'));
-        console.log('DEBUG - Checkbox disabled state:', $(this).prop('disabled'));
-    });
 
     // Make the whole loss box clickable and keep text/selection in sync
     $(document).on('click', '.mgu-loss-toggle', function(e) {
@@ -1763,18 +1528,13 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         const policyId = parseInt($(this).data('policy-id'), 10);
         if (!policyId) {
-            console.error('DEBUG - No policy ID found on delete button');
             return;
         }
-        console.log('DEBUG - Deleting policy:', policyId);
         handleDeleteGadget(policyId);
     });
     
     // Function to handle Add Another Gadget
     function handleAddAnotherGadget() {
-        console.log('DEBUG - Resetting Steps 1-4 for adding another gadget');
-        console.log('DEBUG - Current basket ID before reset:', currentBasketId);
-        
         // Reset all forms
         $('#gadget-type-select').val('').trigger('change');
         $('#manufacturer-select').empty().append('<option value="">Select a manufacturer...</option>');
@@ -1788,15 +1548,10 @@ jQuery(document).ready(function($) {
         
         // Clear any error messages
         $('.mgu-api-step-result').removeClass('error success').empty();
-        
-        console.log('DEBUG - Current basket ID after reset:', currentBasketId);
-        console.log('DEBUG - Ready to add another gadget');
     }
     
     // Function to handle Proceed to Policy
     function handleProceedToPolicy() {
-        console.log('DEBUG - Proceeding to policy creation');
-        
         // Validate period has been selected
         if (!window.selectedPremiumPeriod) {
             alert('Please select a billing period (Monthly or Annual) before proceeding.');
@@ -1807,9 +1562,6 @@ jQuery(document).ready(function($) {
         const selectedPeriod = window.selectedPremiumPeriod;
         const lossCoverEnabled = $('#policy-loss-cover').is(':checked');
         
-        console.log('DEBUG - Selected period:', selectedPeriod, 'loss cover:', lossCoverEnabled);
-        console.log('DEBUG - basketGadgets:', basketGadgets);
-        
         // Show loading state
         showLoading('step-quote');
         
@@ -1819,8 +1571,6 @@ jQuery(document).ready(function($) {
     
     // Function to cancel old basket and create new one with correct settings
     function cancelAndRecreateBasket(selectedPeriod, lossCoverEnabled) {
-        console.log('DEBUG - Canceling basket:', currentBasketId);
-        
         $.ajax({
             url: mgu_api.ajax_url,
             type: 'POST',
@@ -1831,21 +1581,17 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    console.log('DEBUG - Basket canceled successfully');
                     // Clear old quote data since policy IDs will be new after basket recreation
                     quoteDataByPolicyId = {};
-                    console.log('DEBUG - Cleared quote data by policy ID for basket recreation');
                     // Step 2: Get customer ID from old basket and open new one
                     openBasketWithSettings(selectedPeriod, lossCoverEnabled);
                 } else {
                     hideLoading('step-quote');
-                    console.error('DEBUG - Failed to cancel basket:', response.data);
                     showError('step-quote', 'Failed to update basket: ' + (response.data || 'Unknown error'));
                 }
             },
             error: function(xhr, status, error) {
                 hideLoading('step-quote');
-                console.error('DEBUG - Error canceling basket:', error);
                 showError('step-quote', 'Error updating basket: ' + error);
             }
         });
@@ -1863,8 +1609,6 @@ jQuery(document).ready(function($) {
             return;
         }
         
-        console.log('DEBUG - Opening new basket for customer:', customerId);
-        
         $.ajax({
             url: mgu_api.ajax_url,
             type: 'POST',
@@ -1878,7 +1622,6 @@ jQuery(document).ready(function($) {
             success: function(basketResponse) {
                 if (basketResponse.success && basketResponse.data && basketResponse.data.value) {
                     currentBasketId = basketResponse.data.value;
-                    console.log('DEBUG - New basket opened with ID:', currentBasketId);
                     // Update currentCustomerId with the customerId used to open this basket
                     currentCustomerId = customerId;
                     // Step 3: Re-add all gadgets
@@ -1890,7 +1633,6 @@ jQuery(document).ready(function($) {
             },
             error: function(xhr, status, error) {
                 hideLoading('step-quote');
-                console.error('DEBUG - Error opening basket:', error);
                 showError('step-quote', 'Error opening basket: ' + error);
             }
         });
@@ -1899,7 +1641,6 @@ jQuery(document).ready(function($) {
     // Function to re-add all gadgets to the new basket
     function reAddAllGadgets() {
         if (!basketGadgets || basketGadgets.length === 0) {
-            console.error('DEBUG - No gadgets to re-add');
             hideLoading('step-quote');
             showError('step-quote', 'No gadgets to add');
             return;
@@ -1913,7 +1654,6 @@ jQuery(document).ready(function($) {
             // The success handler will call getBasketData() when all are done
             
             const gadget = gadgetsToAdd[addIndex];
-            console.log('DEBUG - Re-adding gadget', addIndex + 1, 'of', gadgetsToAdd.length, gadget);
             
             $.ajax({
                 url: mgu_api.ajax_url,
@@ -1932,11 +1672,9 @@ jQuery(document).ready(function($) {
                 },
                 success: function(response) {
                     if (response.success) {
-                        console.log('DEBUG - Gadget', addIndex + 1, 're-added successfully');
                         addIndex++;
                         if (addIndex >= gadgetsToAdd.length) {
                             // All gadgets re-added - refresh basket data and fetch fresh quotes for all
-                            console.log('DEBUG - All gadgets re-added, refreshing basket data and fetching fresh quotes');
                             hideLoading('step-quote');
                             // Update policyLossCoverEnabled flag
                             policyLossCoverEnabled = $('#policy-loss-cover').is(':checked');
@@ -1955,7 +1693,6 @@ jQuery(document).ready(function($) {
                 },
                 error: function(xhr, status, error) {
                     hideLoading('step-quote');
-                    console.error('DEBUG - Error re-adding gadget:', error);
                     showError('step-quote', 'Error adding gadget: ' + error);
                 }
             });
@@ -1968,12 +1705,9 @@ jQuery(document).ready(function($) {
     // Function to handle delete gadget
     function handleDeleteGadget(policyId) {
         if (!currentBasketId) {
-            console.error('DEBUG - No basket ID available for deleting gadget');
             showError('step-quote', 'No basket available');
             return;
         }
-        
-        console.log('DEBUG - Removing policy from basket:', policyId, 'basket:', currentBasketId);
         
         // Show loading state
         showLoading('step-quote');
@@ -1988,7 +1722,6 @@ jQuery(document).ready(function($) {
                 nonce: mgu_api.nonce
             },
             success: function(response) {
-                console.log('DEBUG - Policy removed response:', response);
                 hideLoading('step-quote');
                 if (response.success) {
                     // Find and remove gadget from local array by matching with API response data
@@ -2002,6 +1735,8 @@ jQuery(document).ready(function($) {
                             return true;
                         });
                     }
+                    // Also remove quote data for deleted policy
+                    delete quoteDataByPolicyId[policyId];
                     // Refresh basket data and display
                     lastBasketData = response.data;
                     displayBasketPremiums(response.data);
@@ -2011,7 +1746,6 @@ jQuery(document).ready(function($) {
             },
             error: function(xhr, status, error) {
                 hideLoading('step-quote');
-                console.error('DEBUG - Error removing policy:', error);
                 showError('step-quote', 'Error removing gadget: ' + error);
             }
         });
@@ -2020,7 +1754,6 @@ jQuery(document).ready(function($) {
     // Function to handle Policy Loss Cover toggle
     function handlePolicyLossCoverToggle() {
         policyLossCoverEnabled = $('#policy-loss-cover').is(':checked');
-        console.log('DEBUG - Policy loss cover enabled:', policyLossCoverEnabled);
         
         // Update premium display immediately (don't wait for API response)
         getBasketData();
@@ -2032,7 +1765,6 @@ jQuery(document).ready(function($) {
     // Function to update basket loss cover
     function updateBasketLossCover() {
         if (!currentBasketId) {
-            console.error('DEBUG - No basket ID available for loss cover update');
             return;
         }
         
@@ -2048,16 +1780,13 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    console.log('DEBUG - Loss cover updated successfully');
                     // Refresh basket data and display updated totals
                     getBasketData();
                 } else {
-                    console.error('DEBUG - Failed to update loss cover:', response.data);
                     showError('step-quote', 'Failed to update loss cover: ' + (response.data || 'Unknown error'));
                 }
             },
             error: function(xhr, status, error) {
-                console.error('DEBUG - Error updating loss cover:', error);
                 showError('step-quote', 'Error updating loss cover: ' + error);
             }
         });
