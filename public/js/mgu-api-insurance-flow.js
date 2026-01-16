@@ -15,6 +15,8 @@ jQuery(document).ready(function($) {
     window.selectedPremiumPeriod = '';
     let lastBasketData = null;
     let currentCustomerId = null;
+    let loadedModels = []; // Store models when loaded to avoid re-fetching
+    let quoteDataByPolicyId = {}; // Map to store quote data by policy ID: { policyId: { monthlyPremium, annualPremium, lossMonthly, lossAnnual } }
 
     // Loading state helper functions
     function showLoading(stepId) {
@@ -45,6 +47,9 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         const value = $(this).data('value');
         if (!value) return;
+
+        // Store the current gadget type globally
+        window.currentGadgetType = value;
 
         // Update aria state and selected class
         $('.mgu-gadget-option').attr('aria-checked', 'false').removeClass('selected');
@@ -84,6 +89,8 @@ jQuery(document).ready(function($) {
         const gadgetType = $(this).val();
         if (!gadgetType) return;
 
+        // Store the current gadget type globally
+        window.currentGadgetType = gadgetType;
         console.log('Selected gadget type:', gadgetType);
 
         // Show manufacturer step
@@ -215,32 +222,55 @@ jQuery(document).ready(function($) {
                 const select = $('#model-select');
                 select.empty().append('<option value="">Select a model...</option>');
                 
-                if (response.success && response.data && response.data.value) {
-                    const models = response.data.value || [];
-                    
-                    if (models.length > 0) {
-                        // Reverse the array order since API returns in correct order but we want last first
-                        models.reverse();
-                        
-                        models.forEach(function(model) {
-                            // Handle V2 API response structure
-                            const modelId = model.id;
-                            const modelName = model.productName || model.name || model.model || 'Unknown Model';
-                            select.append(`<option value="${modelId}">${modelName}</option>`);
-                        });
-                        
-                        // Clear error message on success
-                        $('#step-model .mgu-api-step-result').removeClass('error success').empty();
-                        console.log('Successfully loaded ' + models.length + ' models');
-                    } else {
-                        // No models returned - clear dropdown but don't show error (this is a valid empty result)
-                        console.log('No models available for this manufacturer and gadget type');
-                        // Clear any existing messages - empty results are not errors
-                        $('#step-model .mgu-api-step-result').removeClass('error success').empty();
+                // Check different possible response structures
+                let models = null;
+                if (response.success && response.data) {
+                    // Try response.data.value first (current structure)
+                    if (response.data.value && Array.isArray(response.data.value)) {
+                        models = response.data.value;
                     }
+                    // Try response.data directly (alternative structure)
+                    else if (Array.isArray(response.data)) {
+                        models = response.data;
+                    }
+                }
+                
+                if (models && models.length > 0) {
+                    // Store models globally for later use (before reversing)
+                    loadedModels = models.slice(); // Create a copy
+                    
+                    // Reverse the array order since API returns in correct order but we want last first
+                    models.reverse();
+                    
+                    models.forEach(function(model) {
+                        // Handle V2 API response structure
+                        const modelId = model.id;
+                        const modelName = model.productName || model.name || model.model || 'Unknown Model';
+                        select.append(`<option value="${modelId}">${modelName}</option>`);
+                    });
+                    
+                    // Clear error message on success
+                    $('#step-model .mgu-api-step-result').removeClass('error success').empty();
+                    console.log('Successfully loaded ' + models.length + ' models');
+                    console.log('DEBUG - Stored models with memoryOptions:', loadedModels.map(m => ({ 
+                        id: m.id, 
+                        name: m.productName || m.name || m.model,
+                        hasMemoryOptions: !!(m.memoryOptions && m.memoryOptions.length > 0),
+                        memoryOptionsCount: m.memoryOptions ? m.memoryOptions.length : 0,
+                        optionType: m.optionType
+                    })));
                 } else {
+                    // No models returned - clear dropdown but don't show error (this is a valid empty result)
+                    loadedModels = []; // Clear stored models
+                    console.log('No models available for this manufacturer and gadget type');
+                    // Clear any existing messages - empty results are not errors
+                    $('#step-model .mgu-api-step-result').removeClass('error success').empty();
+                }
+                
+                if (!response.success || !models) {
                     // Only show error if we didn't get models
                     console.log('Models failed - response:', response);
+                    loadedModels = []; // Clear stored models on error
                     $('#step-model .mgu-api-step-result').removeClass('success').addClass('error')
                         .text('Failed to load models: ' + (response.data || 'Unknown error'));
                 }
@@ -270,11 +300,13 @@ jQuery(document).ready(function($) {
             $('#step-device').show();
             setActiveStep('step-device');
             
-            // Populate memory options if available
-            populateMemoryOptions();
-            
-            // Reset form and disable quote button
+            // Reset form and disable quote button FIRST
             resetDeviceForm();
+            
+            // THEN populate memory options if available (after reset so they don't get hidden)
+            setTimeout(function() {
+                populateMemoryOptions();
+            }, 50);
             
             // Trigger initial validation
             setTimeout(function() {
@@ -296,7 +328,7 @@ jQuery(document).ready(function($) {
         
         const deviceData = {
             productId: selectedModelData ? selectedModelData.id : null,
-            memoryInstalled: $('input[name="memory-option"]:checked').val(),
+            memoryInstalled: getMemoryForAPI(), // Returns 0GB if no memory options available
             purchasePrice: parseFloat($('#device-purchase-price').val()) || 0,
             purchaseDate: $('#device-purchase-date').val(),
             serialNumber: $('#device-serial-number').val(),
@@ -629,74 +661,226 @@ jQuery(document).ready(function($) {
             .html(`<div class="success-message">${message}</div>`);
     }
     
+    // Helper function to format memory value with GB or TB suffix
+    function formatMemoryValue(memoryValue) {
+        if (!memoryValue) return '0GB';
+        const memoryStr = String(memoryValue).trim();
+        
+        // If it already has GB or TB suffix, return as is
+        if (/GB|TB/i.test(memoryStr)) {
+            return memoryStr;
+        }
+        
+        // Extract the numeric value
+        const numericValue = parseFloat(memoryStr.replace(/[^0-9.]/g, ''));
+        if (isNaN(numericValue)) {
+            return '0GB';
+        }
+        
+        // If number is >= 1000, convert to TB (e.g., 1024 -> 1TB, 2048 -> 2TB)
+        if (numericValue >= 1000) {
+            const tbValue = (numericValue / 1024).toFixed(1);
+            // Remove .0 if it's a whole number
+            return (tbValue % 1 === 0 ? parseInt(tbValue) : parseFloat(tbValue)) + 'TB';
+        }
+        
+        // Otherwise use GB
+        return numericValue + 'GB';
+    }
+    
+    // Helper function to get memory value for API calls (returns 0GB if no selection)
+    function getMemoryForAPI() {
+        const selectedMemory = $('input[name="memory-option"]:checked').val();
+        if (selectedMemory) {
+            return formatMemoryValue(selectedMemory);
+        }
+        // No memory options available or none selected - use 0GB
+        return '0GB';
+    }
+    
     // Function to populate memory options based on selected model
     function populateMemoryOptions() {
-        // We need to get the full model data from the models that were loaded
-        if (!selectedModelData) return;
+        if (!selectedModelData) {
+            console.log('DEBUG - populateMemoryOptions: No selectedModelData');
+            return;
+        }
         
-        $.ajax({
-            url: mgu_api.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'mgu_api_get_models',
-                manufacturer_id: $('#manufacturer-select').val(),
-                gadget_type: $('#gadget-type-select').val(),
-                nonce: mgu_api.nonce
-            },
-            success: function(response) {
-                if (response.success && response.data && response.data.value) {
-                    const models = response.data.value;
-                    const selectedModel = models.find(model => model.id == selectedModelData.id);
+        console.log('DEBUG - populateMemoryOptions: Looking for model ID:', selectedModelData.id);
+        console.log('DEBUG - populateMemoryOptions: Stored models count:', loadedModels.length);
+        
+        // First try to use stored models (no API call needed)
+        let selectedModel = null;
+        if (loadedModels && loadedModels.length > 0) {
+            // Find the selected model - try both string and number comparison
+            selectedModel = loadedModels.find(model => {
+                const modelId = parseInt(model.id, 10);
+                const selectedId = parseInt(selectedModelData.id, 10);
+                return modelId === selectedId || model.id == selectedModelData.id;
+            });
+            
+            if (selectedModel) {
+                console.log('DEBUG - populateMemoryOptions: Found model in stored data:', selectedModel);
+            } else {
+                console.warn('DEBUG - populateMemoryOptions: Model not found in stored data, will fetch from API');
+            }
+        }
+        
+        // If not found in stored data, fetch from API
+        if (!selectedModel) {
+            console.log('DEBUG - populateMemoryOptions: Fetching models from API for selected model ID:', selectedModelData.id);
+            
+            $.ajax({
+                url: mgu_api.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'mgu_api_get_models',
+                    manufacturer_id: $('#manufacturer-select').val(),
+                    gadget_type: $('#gadget-type-select').val(),
+                    nonce: mgu_api.nonce
+                },
+                success: function(response) {
+                    console.log('DEBUG - populateMemoryOptions: Full API response:', response);
                     
-                    if (selectedModel && selectedModel.memoryOptions && selectedModel.memoryOptions.length > 0) {
-                        // Show memory options container
-                        $('#memory-options-container').show();
-                        
-                        // Clear existing options
-                        $('#memory-radio-buttons').empty();
-                        
-                        // Add radio buttons for each memory option
-                        selectedModel.memoryOptions.forEach(function(memoryOption) {
-                            const radioId = 'memory-' + memoryOption.replace(/[^a-zA-Z0-9]/g, '');
-                            const radioHtml = `
-                                <div class="mgu-api-radio-option mgu-option-box">
-                                    <input type="radio" id="${radioId}" name="memory-option" value="${memoryOption}">
-                                    <label for="${radioId}">
-                                        <span class="mgu-option-amount">${memoryOption}</span>
-                                    </label>
-                                </div>
-                            `;
-                            $('#memory-radio-buttons').append(radioHtml);
-                        });
-                        
-                        // Add click handler for radio options
-                        $('.mgu-api-radio-option').on('click', function() {
-                            $(this).addClass('selected').siblings().removeClass('selected');
-                            $(this).find('input[type="radio"]').prop('checked', true);
-                            
-                            // Get quote data to populate premium period options
-                            populatePremiumPeriodOptions(selectedModel.id, $(this).find('input[type="radio"]').val());
-                            
-                            validateQuoteButton();
-                        });
-
-                        // If only one memory option, auto-select it
-                        if (selectedModel.memoryOptions.length === 1) {
-                            const onlyVal = selectedModel.memoryOptions[0];
-                            const onlyId = 'memory-' + onlyVal.replace(/[^a-zA-Z0-9]/g, '');
-                            const $only = $('#' + onlyId).closest('.mgu-api-radio-option');
-                            $only.addClass('selected');
-                            $('#' + onlyId).prop('checked', true);
-                            populatePremiumPeriodOptions(selectedModel.id, onlyVal);
-                            validateQuoteButton();
+                    // Check different possible response structures
+                    let models = null;
+                    if (response.success && response.data) {
+                        // Try response.data.value first (current structure)
+                        if (response.data.value && Array.isArray(response.data.value)) {
+                            models = response.data.value;
+                            console.log('DEBUG - populateMemoryOptions: Found models in response.data.value:', models.length);
                         }
+                        // Try response.data directly (alternative structure)
+                        else if (Array.isArray(response.data)) {
+                            models = response.data;
+                            console.log('DEBUG - populateMemoryOptions: Found models in response.data:', models.length);
+                        }
+                    }
+                    
+                    if (!models || models.length === 0) {
+                        console.error('DEBUG - populateMemoryOptions: No models found in response');
+                        $('#memory-options-container').hide();
+                        return;
+                    }
+                    
+                    // Update stored models
+                    loadedModels = models;
+                    
+                    // Find the selected model
+                    selectedModel = models.find(model => {
+                        const modelId = parseInt(model.id, 10);
+                        const selectedId = parseInt(selectedModelData.id, 10);
+                        return modelId === selectedId || model.id == selectedModelData.id;
+                    });
+                    
+                    if (selectedModel) {
+                        processMemoryOptions(selectedModel);
                     } else {
-                        // Hide memory options if none available
+                        console.error('DEBUG - populateMemoryOptions: Selected model not found in models array');
+                        console.log('DEBUG - populateMemoryOptions: Looking for ID:', selectedModelData.id);
+                        console.log('DEBUG - populateMemoryOptions: Available model IDs:', models.map(m => ({ id: m.id, name: m.productName || m.name || m.model })));
                         $('#memory-options-container').hide();
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error('DEBUG - populateMemoryOptions: AJAX error:', {xhr, status, error});
+                    $('#memory-options-container').hide();
                 }
+            });
+        } else {
+            // Use stored model data
+            processMemoryOptions(selectedModel);
+        }
+        
+        // Helper function to process memory options
+        function processMemoryOptions(model) {
+            console.log('DEBUG - populateMemoryOptions: Processing model:', model);
+            console.log('DEBUG - populateMemoryOptions: memoryOptions:', model.memoryOptions);
+            console.log('DEBUG - populateMemoryOptions: optionType:', model.optionType);
+            console.log('DEBUG - populateMemoryOptions: Full model data:', model);
+            
+            // Check if container exists
+            const $memoryContainer = $('#memory-options-container');
+            if ($memoryContainer.length === 0) {
+                console.error('DEBUG - populateMemoryOptions: Memory container element not found!');
+                return;
             }
-        });
+            
+            if (model.memoryOptions && Array.isArray(model.memoryOptions) && model.memoryOptions.length > 0) {
+                console.log('DEBUG - populateMemoryOptions: Found', model.memoryOptions.length, 'memory options');
+                console.log('DEBUG - populateMemoryOptions: Memory option values:', model.memoryOptions);
+                console.log('DEBUG - populateMemoryOptions: Memory option types:', model.memoryOptions.map(m => typeof m));
+                
+                // Clear existing options FIRST
+                $('#memory-radio-buttons').empty();
+                
+                // Show memory options container - use multiple methods to ensure it's visible
+                $memoryContainer.css({
+                    'display': 'block',
+                    'visibility': 'visible'
+                }).show();
+                
+                // Verify it's actually visible
+                const isVisible = $memoryContainer.is(':visible');
+                console.log('DEBUG - populateMemoryOptions: Memory container visibility:', isVisible);
+                console.log('DEBUG - populateMemoryOptions: Memory container display style:', $memoryContainer.css('display'));
+                
+                if (!isVisible) {
+                    console.error('DEBUG - populateMemoryOptions: Memory container is still not visible after show()!');
+                    // Force it visible
+                    $memoryContainer.removeAttr('style').css('display', 'block');
+                }
+                
+                // Add radio buttons for each memory option
+                model.memoryOptions.forEach(function(memoryOption) {
+                    // Convert memoryOption to string (it might be a number or object)
+                    const memoryOptionStr = String(memoryOption);
+                    console.log('DEBUG - populateMemoryOptions: Processing memory option:', memoryOption, 'as string:', memoryOptionStr);
+                    
+                    // Format the display value with GB/TB suffix
+                    const formattedValue = formatMemoryValue(memoryOptionStr);
+                    
+                    // Store the original value in the radio button value, but display formatted
+                    const radioId = 'memory-' + memoryOptionStr.replace(/[^a-zA-Z0-9]/g, '');
+                    const radioHtml = `
+                        <div class="mgu-api-radio-option mgu-option-box">
+                            <input type="radio" id="${radioId}" name="memory-option" value="${formattedValue}">
+                            <label for="${radioId}">
+                                <span class="mgu-option-amount">${formattedValue}</span>
+                            </label>
+                        </div>
+                    `;
+                    $('#memory-radio-buttons').append(radioHtml);
+                });
+                
+                // Add click handler for radio options (use off() first to prevent duplicates)
+                $('.mgu-api-radio-option').off('click').on('click', function() {
+                    $(this).addClass('selected').siblings().removeClass('selected');
+                    $(this).find('input[type="radio"]').prop('checked', true);
+                    
+                    // Get quote data to populate premium period options
+                    populatePremiumPeriodOptions(model.id, $(this).find('input[type="radio"]').val());
+                    
+                    validateQuoteButton();
+                });
+
+                // If only one memory option, auto-select it
+                if (model.memoryOptions.length === 1) {
+                    const onlyVal = formatMemoryValue(String(model.memoryOptions[0]));
+                    const onlyId = 'memory-' + String(model.memoryOptions[0]).replace(/[^a-zA-Z0-9]/g, '');
+                    const $only = $('#' + onlyId).closest('.mgu-api-radio-option');
+                    $only.addClass('selected');
+                    $('#' + onlyId).prop('checked', true);
+                    populatePremiumPeriodOptions(model.id, onlyVal);
+                    validateQuoteButton();
+                }
+            } else {
+                // Hide memory options if none available
+                console.warn('DEBUG - populateMemoryOptions: No memory options available for selected model');
+                console.warn('DEBUG - populateMemoryOptions: memoryOptions value:', model.memoryOptions);
+                console.warn('DEBUG - populateMemoryOptions: optionType:', model.optionType);
+                $('#memory-options-container').hide();
+            }
+        }
     }
     
     // Function to populate premium period options with quote data
@@ -720,7 +904,7 @@ jQuery(document).ready(function($) {
                 action: 'mgu_api_get_quote',
                 device_data: {
                     productId: productId,
-                    memoryInstalled: memoryInstalled,
+                    memoryInstalled: memoryInstalled ? formatMemoryValue(memoryInstalled) : '0GB',
                     purchasePrice: purchasePrice,
                     purchaseDate: $('#device-purchase-date').val(),
                     serialNumber: $('#device-serial-number').val()
@@ -869,7 +1053,8 @@ jQuery(document).ready(function($) {
                         purchaseDate: deviceData.purchaseDate,
                         serialNumber: deviceData.serialNumber,
                         premiumPeriod: deviceData.premiumPeriod,
-                        modelName: selectedModelData ? selectedModelData.name : 'Unknown Model'
+                        modelName: selectedModelData ? selectedModelData.name : 'Unknown Model',
+                        gadgetType: window.currentGadgetType || '' // Store gadget type to check if it's a laptop
                     });
                     
                     // Show quote summary and refresh basket data
@@ -878,16 +1063,9 @@ jQuery(document).ready(function($) {
                     $('#step-policy').hide();
                     // Display quote summary (gadget list and toggles)
                     displayQuoteSummary();
-                    // Get updated basket data to show all gadgets and correct totals
-                    getBasketData();
-                    // Attach premiums to last gadget entry
-                    if (basketGadgets.length > 0 && window.currentQuoteData) {
-                        const last = basketGadgets[basketGadgets.length - 1];
-                        last.monthlyPremium = Number(window.currentQuoteData.monthlyPremium || 0);
-                        last.annualPremium = Number(window.currentQuoteData.annualPremium || 0);
-                        last.lossMonthly = Number(window.currentQuoteData.lossMonthly || 0);
-                        last.lossAnnual = Number(window.currentQuoteData.lossAnnual || 0);
-                    }
+                    // Get updated basket data and fetch fresh quote for this gadget
+                    // Pass deviceData so we can fetch a fresh quote with the correct purchase price
+                    getBasketDataWithQuoteStorage(deviceData);
                 } else {
                     showError('step-device', 'Failed to add gadget: ' + (response.data || 'Unknown error'));
                 }
@@ -932,6 +1110,95 @@ jQuery(document).ready(function($) {
         });
     }
     
+    // Function to refresh quotes for all gadgets in the basket
+    function refreshQuotesForAllGadgets() {
+        if (!currentBasketId) {
+            console.error('DEBUG - No basket ID available for refreshing quotes');
+            getBasketData();
+            return;
+        }
+        
+        // First get the basket data to see all policies
+        $.ajax({
+            url: mgu_api.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'mgu_api_get_basket',
+                basket_id: currentBasketId,
+                nonce: mgu_api.nonce
+            },
+            success: function(response) {
+                if (response.success && response.data && response.data.policies) {
+                    const policies = response.data.policies;
+                    console.log('DEBUG - Refreshing quotes for', policies.length, 'policies');
+                    
+                    // Fetch fresh quotes for each policy
+                    let quotesFetched = 0;
+                    const totalPolicies = policies.length;
+                    
+                    policies.forEach((policy, index) => {
+                        // Find matching gadget data from basketGadgets
+                        const gadgetData = basketGadgets[index];
+                        if (gadgetData) {
+                            $.ajax({
+                                url: mgu_api.ajax_url,
+                                type: 'POST',
+                                data: {
+                                    action: 'mgu_api_get_quote',
+                                    device_data: {
+                                        productId: gadgetData.productId,
+                                        memoryInstalled: gadgetData.memoryInstalled,
+                                        purchasePrice: gadgetData.purchasePrice,
+                                        purchaseDate: gadgetData.purchaseDate,
+                                        serialNumber: gadgetData.serialNumber
+                                    },
+                                    nonce: mgu_api.nonce
+                                },
+                                success: function(quoteResponse) {
+                                    if (quoteResponse.success && quoteResponse.data) {
+                                        const freshQuoteData = quoteResponse.data;
+                                        quoteDataByPolicyId[policy.id] = {
+                                            monthlyPremium: Number(freshQuoteData.monthlyPremium || 0),
+                                            annualPremium: Number(freshQuoteData.annualPremium || 0),
+                                            lossMonthly: Number(freshQuoteData.lossCoverMonthlyPremium || 0),
+                                            lossAnnual: Number(freshQuoteData.lossCoverAnnualPremium || 0)
+                                        };
+                                        console.log('DEBUG - Refreshed quote for policy ID:', policy.id, quoteDataByPolicyId[policy.id]);
+                                    }
+                                    
+                                    quotesFetched++;
+                                    if (quotesFetched === totalPolicies) {
+                                        // All quotes fetched, refresh display
+                                        console.log('DEBUG - All quotes refreshed, updating display');
+                                        displayBasketPremiums(response.data);
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('DEBUG - Error refreshing quote for policy:', policy.id, error);
+                                    quotesFetched++;
+                                    if (quotesFetched === totalPolicies) {
+                                        displayBasketPremiums(response.data);
+                                    }
+                                }
+                            });
+                        } else {
+                            quotesFetched++;
+                            if (quotesFetched === totalPolicies) {
+                                displayBasketPremiums(response.data);
+                            }
+                        }
+                    });
+                } else {
+                    getBasketData();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('DEBUG - Error getting basket data for quote refresh:', error);
+                getBasketData();
+            }
+        });
+    }
+    
     // Function to get basket data and display premiums
     function getBasketData() {
         if (!currentBasketId) {
@@ -952,6 +1219,101 @@ jQuery(document).ready(function($) {
                     console.log('DEBUG - Basket data received:', response.data);
                     lastBasketData = response.data;
                     displayBasketPremiums(response.data);
+                } else {
+                    console.error('DEBUG - Failed to get basket data:', response);
+                    displayBasketPremiums(null);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('DEBUG - Error getting basket data:', error);
+                displayBasketPremiums(null);
+            }
+        });
+    }
+    
+    // Function to get basket data and store quote data by policy ID
+    function getBasketDataWithQuoteStorage(deviceData) {
+        if (!currentBasketId) {
+            console.error('DEBUG - No basket ID available for getting basket data');
+            return;
+        }
+        
+        $.ajax({
+            url: mgu_api.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'mgu_api_get_basket',
+                basket_id: currentBasketId,
+                nonce: mgu_api.nonce
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    console.log('DEBUG - Basket data received for quote storage:', response.data);
+                    lastBasketData = response.data;
+                    
+                    // Find the newly added policy (last in array)
+                    if (response.data.policies && Array.isArray(response.data.policies)) {
+                        const newPolicies = response.data.policies;
+                        const lastPolicy = newPolicies[newPolicies.length - 1];
+                        
+                        if (lastPolicy && lastPolicy.id && deviceData) {
+                            // Fetch a FRESH quote for this specific gadget
+                            console.log('DEBUG - Fetching fresh quote for newly added gadget:', {
+                                productId: deviceData.productId,
+                                memoryInstalled: deviceData.memoryInstalled,
+                                purchasePrice: deviceData.purchasePrice,
+                                policyId: lastPolicy.id
+                            });
+                            
+                            $.ajax({
+                                url: mgu_api.ajax_url,
+                                type: 'POST',
+                                data: {
+                                    action: 'mgu_api_get_quote',
+                                    device_data: {
+                                        productId: deviceData.productId,
+                                        memoryInstalled: deviceData.memoryInstalled,
+                                        purchasePrice: deviceData.purchasePrice,
+                                        purchaseDate: deviceData.purchaseDate,
+                                        serialNumber: deviceData.serialNumber
+                                    },
+                                    nonce: mgu_api.nonce
+                                },
+                                success: function(quoteResponse) {
+                                    if (quoteResponse.success && quoteResponse.data) {
+                                        const freshQuoteData = quoteResponse.data;
+                                        console.log('DEBUG - Fresh quote received for policy ID:', lastPolicy.id, freshQuoteData);
+                                        
+                                        // Store the FRESH quote data keyed by policy ID
+                                        quoteDataByPolicyId[lastPolicy.id] = {
+                                            monthlyPremium: Number(freshQuoteData.monthlyPremium || 0),
+                                            annualPremium: Number(freshQuoteData.annualPremium || 0),
+                                            lossMonthly: Number(freshQuoteData.lossCoverMonthlyPremium || 0),
+                                            lossAnnual: Number(freshQuoteData.lossCoverAnnualPremium || 0)
+                                        };
+                                        console.log('DEBUG - Stored FRESH quote data for policy ID:', lastPolicy.id, quoteDataByPolicyId[lastPolicy.id]);
+                                        
+                                        // Refresh the display with the fresh quote data
+                                        displayBasketPremiums(response.data);
+                                    } else {
+                                        console.error('DEBUG - Failed to get fresh quote:', quoteResponse);
+                                        // Fallback: use API premium data from basket
+                                        displayBasketPremiums(response.data);
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('DEBUG - Error fetching fresh quote:', error);
+                                    // Fallback: use API premium data from basket
+                                    displayBasketPremiums(response.data);
+                                }
+                            });
+                        } else {
+                            // No new policy found or no device data - just display
+                            displayBasketPremiums(response.data);
+                        }
+                    } else {
+                        displayBasketPremiums(response.data);
+                    }
                 } else {
                     console.error('DEBUG - Failed to get basket data:', response);
                     displayBasketPremiums(null);
@@ -1019,12 +1381,43 @@ jQuery(document).ready(function($) {
                 })));
             }
             
-            // Calculate base premiums using stored per-gadget monthly/annual from quotes
-            const baseMonthlySum = basketGadgets.reduce((total, g) => total + (Number(g.monthlyPremium) || 0), 0);
-            const baseAnnualSum = basketGadgets.reduce((total, g) => total + (Number(g.annualPremium) || 0), 0);
-            // Loss cover sums from stored per-gadget quote values
-            const individualLossPremiumsMonthly = basketGadgets.reduce((total, g) => total + (Number(g.lossMonthly) || 0), 0);
-            const individualLossPremiumsAnnual = basketGadgets.reduce((total, g) => total + (Number(g.lossAnnual) || 0), 0);
+            // Calculate base premiums using stored quote data by policy ID
+            let baseMonthlySum = 0;
+            let baseAnnualSum = 0;
+            individualGadgets.forEach(gadget => {
+                const policyId = gadget.id;
+                const storedQuoteData = quoteDataByPolicyId[policyId];
+                if (storedQuoteData) {
+                    baseMonthlySum += Number(storedQuoteData.monthlyPremium || 0);
+                    baseAnnualSum += Number(storedQuoteData.annualPremium || 0);
+                } else {
+                    // Fallback to API premium data if no stored quote
+                    const apiPremium = gadget.premium || gadget.netPremium || gadget.grossPremium || 0;
+                    // If API gives us a single premium, we don't know if it's monthly or annual
+                    // For now, assume it's the period that's selected
+                    if (window.selectedPremiumPeriod === 'Annual') {
+                        baseAnnualSum += Number(apiPremium);
+                    } else {
+                        baseMonthlySum += Number(apiPremium);
+                    }
+                }
+            });
+            
+            // Loss cover sums from stored per-gadget quote values - EXCLUDE LAPTOPS
+            const individualLossPremiumsMonthly = individualGadgets.reduce((total, gadget) => {
+                // Don't include laptops in loss cover premium calculation
+                if (gadget.gadgetType === 'Laptop') return total;
+                const policyId = gadget.id;
+                const storedQuoteData = quoteDataByPolicyId[policyId];
+                return total + (storedQuoteData ? Number(storedQuoteData.lossMonthly || 0) : 0);
+            }, 0);
+            const individualLossPremiumsAnnual = individualGadgets.reduce((total, gadget) => {
+                // Don't include laptops in loss cover premium calculation
+                if (gadget.gadgetType === 'Laptop') return total;
+                const policyId = gadget.id;
+                const storedQuoteData = quoteDataByPolicyId[policyId];
+                return total + (storedQuoteData ? Number(storedQuoteData.lossAnnual || 0) : 0);
+            }, 0);
 
             console.log('DEBUG - Loss cover monthly sum:', individualLossPremiumsMonthly, 'annual sum:', individualLossPremiumsAnnual);
             
@@ -1077,24 +1470,45 @@ jQuery(document).ready(function($) {
         let premiumHtml = '<div class="mgu-quote-summary-container">';
         premiumHtml += '<h4 class="mgu-quote-summary-title">Your Quote Summary</h4>';
         
-        // Show individual gadgets
-        if (individualGadgets.length > 0) {
-            premiumHtml += '<div class="mgu-gadget-items-wrapper">';
-            individualGadgets.forEach((gadget, index) => {
-                // Determine display base premium by selected period
-                const baseDisplay = (window.selectedPremiumPeriod === 'Annual'
-                    ? (basketGadgets[index] ? (basketGadgets[index].annualPremium || 0) : (gadget.premium || 0))
-                    : (basketGadgets[index] ? (basketGadgets[index].monthlyPremium || 0) : (gadget.premium || 0)));
-                // Use stored quote values for loss cover (from TGadgetPremium response)
-                const lossMonthly = (basketGadgets[index] && basketGadgets[index].lossMonthly != null)
-                    ? Number(basketGadgets[index].lossMonthly)
-                    : 0;
-                const lossAnnual = (basketGadgets[index] && basketGadgets[index].lossAnnual != null)
-                    ? Number(basketGadgets[index].lossAnnual)
-                    : 0;
-                
-                // Get gadget details from basketGadgets array
-                const gadgetDetails = basketGadgets[index];
+            // Show individual gadgets
+            if (individualGadgets.length > 0) {
+                premiumHtml += '<div class="mgu-gadget-items-wrapper">';
+                individualGadgets.forEach((gadget, index) => {
+                    // Match by policy ID instead of index to handle same product added multiple times
+                    const policyId = gadget.id;
+                    const storedQuoteData = quoteDataByPolicyId[policyId];
+                    
+                    console.log('DEBUG - Displaying gadget:', {
+                        policyId: policyId,
+                        index: index,
+                        hasStoredQuote: !!storedQuoteData,
+                        storedQuote: storedQuoteData,
+                        apiPremium: gadget.premium,
+                        apiGrossPremium: gadget.grossPremium,
+                        apiNetPremium: gadget.netPremium
+                    });
+                    
+                    // Determine display base premium by selected period
+                    // Priority: 1) Stored quote data by policy ID, 2) API premium data, 3) Fallback to 0
+                    let baseDisplay = 0;
+                    if (storedQuoteData) {
+                        baseDisplay = window.selectedPremiumPeriod === 'Annual'
+                            ? (storedQuoteData.annualPremium || 0)
+                            : (storedQuoteData.monthlyPremium || 0);
+                    } else {
+                        // Fallback to API premium data
+                        baseDisplay = gadget.premium || gadget.netPremium || gadget.grossPremium || 0;
+                    }
+                    
+                    // Use stored quote values for loss cover (from TGadgetPremium response)
+                    const lossMonthly = storedQuoteData ? Number(storedQuoteData.lossMonthly || 0) : 0;
+                    const lossAnnual = storedQuoteData ? Number(storedQuoteData.lossAnnual || 0) : 0;
+                    
+                    // Get gadget details from basketGadgets array (for display info like purchase price)
+                    // Try to match by finding a gadget with matching productId, but prefer index as fallback
+                    let gadgetDetails = basketGadgets[index];
+                    // If index doesn't match well, try to find by productId (though this won't work if same product added twice)
+                    // For now, we'll use index but the premium comes from policy ID matching above
                 premiumHtml += `
                     <div class="mgu-gadget-item-detail">
                         <h5>Gadget ${index + 1}: ${gadget.make} ${gadget.model}</h5>
@@ -1112,9 +1526,20 @@ jQuery(document).ready(function($) {
                 
                 // Show loss cover per gadget using stored quote values if available and loss cover is enabled
                 const lossCoverEnabled = $('#policy-loss-cover').is(':checked');
-                if (lossCoverEnabled && (lossMonthly > 0 || lossAnnual > 0)) {
-                    const lossDisplay = window.selectedPremiumPeriod === 'Annual' ? lossAnnual : lossMonthly;
-                    premiumHtml += `<p><strong>Loss Cover:</strong> £${lossDisplay.toFixed(2)}</p>`;
+                // Check if this gadget is a laptop - use gadgetType from API response (most reliable)
+                const isLaptop = gadget.gadgetType === 'Laptop' || 
+                                (gadgetDetails && gadgetDetails.gadgetType === 'Laptop') ||
+                                (basketGadgets[index] && basketGadgets[index].gadgetType === 'Laptop');
+                
+                if (lossCoverEnabled) {
+                    if (isLaptop) {
+                        // Laptops don't get loss cover - show message instead
+                        premiumHtml += `<p><strong>Loss Cover:</strong> <span class="mgu-help-text-small" style="color: #666; font-style: italic;">Loss cover is not available for laptops</span></p>`;
+                    } else if (lossMonthly > 0 || lossAnnual > 0) {
+                        // Show loss cover premium for non-laptop devices
+                        const lossDisplay = window.selectedPremiumPeriod === 'Annual' ? lossAnnual : lossMonthly;
+                        premiumHtml += `<p><strong>Loss Cover:</strong> £${lossDisplay.toFixed(2)}</p>`;
+                    }
                 }
                 
                 // Add delete button with policy ID for removal
@@ -1179,19 +1604,27 @@ jQuery(document).ready(function($) {
         const today = new Date().toISOString().split('T')[0];
         $('#device-purchase-date').val(today);
         
-        $('#memory-options-container').hide();
+        // Only hide memory options if we're actually resetting (not when model is selected)
+        // Memory options will be populated right after this, so we'll clear but not necessarily hide
         $('#memory-radio-buttons').empty();
         $('#premium-period-container').hide();
         $('#premium-period-buttons').empty();
         $('#get-quote-btn').prop('disabled', true);
         $('#step-device .mgu-api-step-result').removeClass('error success').empty();
+        
+        // Note: We don't hide memory-options-container here because populateMemoryOptions() 
+        // will be called right after and will show it if memory options exist
     }
     
     // Function to validate quote button state
     function validateQuoteButton() {
         const purchaseDate = $('#device-purchase-date').val();
         const purchasePrice = $('#device-purchase-price').val();
-        const memorySelected = $('input[name="memory-option"]:checked').length > 0;
+        
+        // Check if memory options container is visible (meaning memory options exist)
+        const memoryOptionsExist = $('#memory-options-container').is(':visible');
+        // Only require memory selection if memory options are displayed
+        const memorySelected = !memoryOptionsExist || $('input[name="memory-option"]:checked').length > 0;
         
         // Check if purchase date is within 36 months
         let dateValid = false;
@@ -1347,6 +1780,7 @@ jQuery(document).ready(function($) {
         $('#manufacturer-select').empty().append('<option value="">Select a manufacturer...</option>');
         $('#model-select').empty().append('<option value="">Select a model...</option>');
         resetDeviceForm();
+        // Note: We don't clear quoteDataByPolicyId here because we want to keep quote data for existing gadgets
         
         // Hide all steps except Step 1
         $('.mgu-api-step').hide();
@@ -1398,6 +1832,9 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     console.log('DEBUG - Basket canceled successfully');
+                    // Clear old quote data since policy IDs will be new after basket recreation
+                    quoteDataByPolicyId = {};
+                    console.log('DEBUG - Cleared quote data by policy ID for basket recreation');
                     // Step 2: Get customer ID from old basket and open new one
                     openBasketWithSettings(selectedPeriod, lossCoverEnabled);
                 } else {
@@ -1472,17 +1909,8 @@ jQuery(document).ready(function($) {
         let addIndex = 0;
         
         function addNextGadget() {
-            if (addIndex >= gadgetsToAdd.length) {
-                // All gadgets added
-                console.log('DEBUG - All gadgets re-added successfully');
-                hideLoading('step-quote');
-                // Update policyLossCoverEnabled flag
-                policyLossCoverEnabled = $('#policy-loss-cover').is(':checked');
-                // Show policy step
-                $('#step-policy').show();
-                setActiveStep('step-policy');
-                return;
-            }
+            // This function will be called recursively until all gadgets are added
+            // The success handler will call getBasketData() when all are done
             
             const gadget = gadgetsToAdd[addIndex];
             console.log('DEBUG - Re-adding gadget', addIndex + 1, 'of', gadgetsToAdd.length, gadget);
@@ -1497,7 +1925,7 @@ jQuery(document).ready(function($) {
                         productId: gadget.productId,
                         dateOfPurchase: gadget.purchaseDate,
                         serialNumber: gadget.serialNumber || '',
-                        installedMemory: gadget.memoryInstalled,
+                        installedMemory: gadget.memoryInstalled ? formatMemoryValue(gadget.memoryInstalled) : '0GB',
                         purchasePrice: gadget.purchasePrice
                     },
                     nonce: mgu_api.nonce
@@ -1506,7 +1934,20 @@ jQuery(document).ready(function($) {
                     if (response.success) {
                         console.log('DEBUG - Gadget', addIndex + 1, 're-added successfully');
                         addIndex++;
-                        addNextGadget();
+                        if (addIndex >= gadgetsToAdd.length) {
+                            // All gadgets re-added - refresh basket data and fetch fresh quotes for all
+                            console.log('DEBUG - All gadgets re-added, refreshing basket data and fetching fresh quotes');
+                            hideLoading('step-quote');
+                            // Update policyLossCoverEnabled flag
+                            policyLossCoverEnabled = $('#policy-loss-cover').is(':checked');
+                            // Fetch fresh quotes for all re-added gadgets
+                            refreshQuotesForAllGadgets();
+                            // Show policy step
+                            $('#step-policy').show();
+                            setActiveStep('step-policy');
+                        } else {
+                            addNextGadget();
+                        }
                     } else {
                         hideLoading('step-quote');
                         showError('step-quote', 'Failed to add gadget: ' + (response.data || 'Unknown error'));
