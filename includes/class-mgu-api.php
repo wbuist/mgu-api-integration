@@ -41,7 +41,7 @@ class MGU_API {
      */
     public function __construct() {
         $this->plugin_name = 'mgu-api-integration';
-        $this->version = '1.0.0';
+        $this->version = '1.0.6';
         
         $this->load_dependencies();
         $this->define_admin_hooks();

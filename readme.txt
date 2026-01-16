@@ -4,7 +4,7 @@ Tags: insurance, api, gadgets, quotes, mgu
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,6 +37,15 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 
 == Changelog ==
 
+= 1.0.6 =
+- Fixed memory options display issue - memory options now properly formatted with GB/TB suffixes
+- Fixed quote premium display for duplicate products - each gadget now shows correct premium based on its purchase price
+- Implemented fresh quote fetching for each gadget added to ensure accurate premiums
+- Fixed loss cover handling for laptops - laptops now excluded from loss cover premiums with informative message
+- Added policy ID-based quote storage system for accurate premium matching
+- Improved memory value handling - automatically adds GB suffix when missing for API compatibility
+- Enhanced debugging and error handling for quote and memory option processing
+
 = 1.0.5 =
 - Removed all verbose debug logging that was writing to error logs on every page load
 - Cleaned up production code by removing debug statements and AJAX handler verbose logging
@@ -67,6 +76,9 @@ Yes. Access tokens are cached via WordPress transients and refreshed when requir
 Initial production-ready structure with insurance flow, token caching, and multi-gadget basket.
 
 == Upgrade Notice ==
+
+= 1.0.6 =
+Bug fixes and improvements for memory options, quote accuracy, and loss cover handling. Each gadget now displays correct premiums even when same product is added multiple times with different prices.
 
 = 1.0.5 =
 Performance and code quality update. Removed verbose debug logging that was causing log bloat. **Please clear your error logs after updating** as they may contain extensive debug output from previous versions. Error logging now only occurs for actual errors.
